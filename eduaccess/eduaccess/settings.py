@@ -29,7 +29,12 @@ SECRET_KEY = 'django-insecure-tqo4$jtop&s0nc(=7h0m1#4+spz&zw(6jr5jthmj_+!_*y*^8+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'supercultivated-nilda-pyrheliometric.ngrok-free.dev']
+ALLOWED_HOSTS = [
+    '127.0.0.1',
+    'localhost',
+    '.ngrok-free.app',
+    '.ngrok-free.dev',
+]
 
 
 # Application definition

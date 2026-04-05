@@ -16,9 +16,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from whatsapp_bot.views import whatsapp_webhook
+from whatsapp_bot.views import (
+    audio_pack_transcript_download,
+    learning_pack_download,
+    whatsapp_webhook,
+)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('audio-packs/<slug:slug>/transcript/', audio_pack_transcript_download),
+    path('packs/<slug:slug>/', learning_pack_download),
     path('whatsapp/', whatsapp_webhook),
 ]
