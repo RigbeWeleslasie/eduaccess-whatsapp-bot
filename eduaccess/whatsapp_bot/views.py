@@ -1,6 +1,10 @@
 # eduaccess/whatsapp/views.py
+import html
+import json
 import math
 import re
+import zipfile
+from io import BytesIO
 from fractions import Fraction
 
 from django.http import Http404, HttpResponse
@@ -83,6 +87,14 @@ AUDIO_PACK_MESSAGES = {
     "audio packs",
     "audio lessons",
     "audio pack",
+}
+OFFLINE_PACK_MESSAGES = {
+    "offline packs",
+    "download offline",
+    "offline bundle",
+    "offline library",
+    "offline all",
+    "download all offline",
 }
 EXIT_MESSAGES = {
     "cancel",
@@ -268,6 +280,17 @@ def _extract_audio_pack_query(message):
     return None
 
 
+def _extract_offline_pack_query(message):
+    lowered_message = message.lower().strip()
+    if lowered_message.startswith("offline pack "):
+        return lowered_message[13:].strip()
+    if lowered_message.startswith("download offline pack "):
+        return lowered_message[22:].strip()
+    if lowered_message.startswith("offline bundle "):
+        return lowered_message[15:].strip()
+    return None
+
+
 def _looks_like_general_question(message):
     lowered_message = message.strip().lower()
     if "?" in lowered_message:
@@ -367,6 +390,141 @@ def _list_audio_packs(subject=None):
     return heading + ":\n" + "\n".join(pack_lines)
 
 
+def _matches_pack_identity(pack, query):
+    if not query:
+        return False
+
+    lowered_query = query.strip().lower()
+    if isinstance(pack, dict):
+        slug = pack["slug"]
+        topic = pack["topic"]
+    else:
+        slug = pack.slug
+        topic = pack.topic
+    return slug == lowered_query or topic.lower() == lowered_query
+
+
+def _find_matching_learning_pack(audio_pack):
+    topic = audio_pack["topic"] if isinstance(audio_pack, dict) else audio_pack.topic
+    subject = audio_pack["subject"] if isinstance(audio_pack, dict) else audio_pack.subject
+    for pack in get_learning_packs(subject=subject):
+        if pack["topic"].lower() == topic.lower():
+            return pack
+    try:
+        return LearningPack.objects.get(subject=subject, topic__iexact=topic)
+    except LearningPack.DoesNotExist:
+        return None
+
+
+def _find_matching_audio_pack(learning_pack):
+    topic = learning_pack["topic"] if isinstance(learning_pack, dict) else learning_pack.topic
+    subject = learning_pack["subject"] if isinstance(learning_pack, dict) else learning_pack.subject
+    for pack in get_audio_packs(subject=subject):
+        if pack["topic"].lower() == topic.lower():
+            return pack
+    try:
+        return AudioLearningPack.objects.get(subject=subject, topic__iexact=topic)
+    except AudioLearningPack.DoesNotExist:
+        return None
+
+
+def _build_offline_bundle_slug(learning_pack, audio_pack):
+    if learning_pack:
+        return learning_pack["slug"] if isinstance(learning_pack, dict) else learning_pack.slug
+    if audio_pack:
+        return audio_pack["slug"] if isinstance(audio_pack, dict) else audio_pack.slug
+    return ""
+
+
+def _get_offline_bundle(bundle_query):
+    learning_pack = _get_learning_pack(bundle_query)
+    audio_pack = _get_audio_pack(bundle_query)
+
+    if learning_pack and not audio_pack:
+        audio_pack = _find_matching_audio_pack(learning_pack)
+    if audio_pack and not learning_pack:
+        learning_pack = _find_matching_learning_pack(audio_pack)
+
+    if not learning_pack and not audio_pack:
+        for pack in get_learning_packs():
+            if _matches_pack_identity(pack, bundle_query):
+                learning_pack = pack
+                audio_pack = _find_matching_audio_pack(pack)
+                break
+        if not learning_pack and not audio_pack:
+            for pack in get_audio_packs():
+                if _matches_pack_identity(pack, bundle_query):
+                    audio_pack = pack
+                    learning_pack = _find_matching_learning_pack(pack)
+                    break
+
+    if not learning_pack and not audio_pack:
+        return None, None, None
+
+    return learning_pack, audio_pack, _build_offline_bundle_slug(learning_pack, audio_pack)
+
+
+def _list_offline_bundles(subject=None):
+    available_lines = []
+    for pack, _, _ in _offline_bundle_entries(subject=subject):
+        available_lines.append(f"{pack['topic']}: offline pack {pack['topic'].lower()}")
+
+    if not available_lines:
+        return "No offline bundles are available yet."
+
+    heading = "Offline study bundles"
+    if subject:
+        heading = f"{subject.title()} offline bundles"
+    return heading + ":\n" + "\n".join(available_lines)
+
+
+def _offline_library_url(base_url):
+    return f"{base_url}/offline-library/"
+
+
+def _offline_archive_url(base_url, subject=None):
+    archive_url = f"{base_url}/offline-library/download/"
+    if subject:
+        return f"{archive_url}?subject={subject}"
+    return archive_url
+
+
+def _offline_library_reply(base_url, subject=None):
+    library_url = _offline_library_url(base_url)
+    if subject:
+        return (
+            f"{subject.title()} offline library is ready.\n"
+            f"Open: {library_url}?subject={subject}"
+        )
+    return (
+        "Offline library is ready.\n"
+        f"Open: {library_url}"
+    )
+
+
+def _offline_archive_reply(base_url, subject=None):
+    archive_url = _offline_archive_url(base_url, subject=subject)
+    if subject:
+        return (
+            f"{subject.title()} offline archive is ready.\n"
+            f"Download: {archive_url}"
+        )
+    return (
+        "Full offline archive is ready.\n"
+        f"Download: {archive_url}"
+    )
+
+
+def _offline_bundle_entries(subject=None):
+    entries = []
+    for pack in get_learning_packs(subject=subject):
+        audio_pack = _find_matching_audio_pack(pack)
+        if not audio_pack:
+            continue
+        entries.append((pack, audio_pack, _build_offline_bundle_slug(pack, audio_pack)))
+    return entries
+
+
 def _find_local_study_pack_from_message(message):
     lowered_message = message.lower()
     for pack in get_learning_packs():
@@ -412,17 +570,29 @@ def _learning_pack_reply(pack, base_url, low_data=False):
     summary = pack["summary"] if isinstance(pack, dict) else pack.summary
     topic = pack["topic"] if isinstance(pack, dict) else pack.topic
     download_url = f"{base_url}/packs/{slug}/"
+    _, audio_pack, bundle_slug = _get_offline_bundle(slug)
+    offline_bundle_url = f"{base_url}/offline-packs/{bundle_slug}/" if bundle_slug and audio_pack else ""
     if low_data:
-        return (
+        lines = [
             f"{title}\n"
             f"{summary}\n"
-            f"Download: {download_url}"
-        )
-    return (
-        f"{title} ({topic})\n"
-        f"{summary}\n"
-        f"Download full text: {download_url}"
-    )
+            f"Download: {download_url}",
+        ]
+        if offline_bundle_url:
+            lines.append(f"Offline bundle: {offline_bundle_url}")
+        return "\n".join(lines)
+    lines = [
+        f"{title} ({topic})",
+        summary,
+        f"Download full text: {download_url}",
+    ]
+    if offline_bundle_url:
+        lines.append(f"Offline bundle: {offline_bundle_url}")
+    return "\n".join(lines)
+
+
+def _audio_player_url(base_url, slug):
+    return f"{base_url}/audio-packs/{slug}/player/"
 
 
 def _audio_pack_reply(pack, base_url, low_data=False):
@@ -432,15 +602,18 @@ def _audio_pack_reply(pack, base_url, low_data=False):
     duration_label = pack["duration_label"] if isinstance(pack, dict) else pack.duration_label
     audio_url = pack["audio_url"] if isinstance(pack, dict) else pack.audio_url
     transcript_url = f"{base_url}/audio-packs/{slug}/transcript/"
+    learning_pack, _, bundle_slug = _get_offline_bundle(slug)
+    offline_bundle_url = f"{base_url}/offline-packs/{bundle_slug}/" if bundle_slug and learning_pack else ""
 
     lines = [title]
     if duration_label:
         lines[0] = f"{title} ({duration_label})"
     lines.append(summary)
-    if audio_url:
-        lines.append(f"Audio: {audio_url}")
+    lines.append(f"Audio lesson: {audio_url or _audio_player_url(base_url, slug)}")
     lines.append(f"Transcript: {transcript_url}")
-    if low_data and len(lines) > 3:
+    if offline_bundle_url:
+        lines.append(f"Offline bundle: {offline_bundle_url}")
+    if low_data and len(lines) > 4:
         lines = lines[:3]
     return "\n".join(lines)
 
@@ -454,7 +627,7 @@ def _offline_study_reply(message, progress, base_url):
 
     return (
         "Offline mode is on.\n"
-        "Use 'practice maths', 'practice english', 'packs', 'audio packs', or ask for a known topic like Algebra or Passive voice."
+        "Use 'practice maths', 'practice english', 'packs', 'audio packs', 'offline packs', 'offline library', or ask for a known topic like Algebra or Passive voice."
     )
 
 
@@ -749,6 +922,9 @@ def _help_text(low_data=False):
             "practice english\n"
             "packs\n"
             "audio packs\n"
+            "offline packs\n"
+            "offline library\n"
+            "offline all\n"
             "english topics\n"
             "progress\n"
             "offline on | offline off\n"
@@ -765,6 +941,9 @@ def _help_text(low_data=False):
         "pack algebra | pack passive voice\n"
         "audio packs | audio packs maths | audio packs english\n"
         "audio pack algebra | audio pack passive voice\n"
+        "offline packs | offline pack algebra\n"
+        "offline library\n"
+        "offline all | offline all maths\n"
         "english topics\n"
         "practice maths foundation|core|stretch\n"
         "progress\n"
@@ -819,6 +998,201 @@ def learning_pack_download(request, slug):
     return response
 
 
+def _audio_pack_content(pack):
+    if isinstance(pack, dict):
+        return (
+            pack["title"],
+            pack["summary"],
+            pack["transcript"],
+        )
+    return (
+        pack.title,
+        pack.summary,
+        pack.transcript,
+    )
+
+
+def _audio_pack_player_html(pack, offline_bundle_url=None):
+    title, summary, transcript = _audio_pack_content(pack)
+    transcript_json = json.dumps(transcript)
+    bundle_link = ""
+    if offline_bundle_url:
+        bundle_link = (
+            f'<p><a href="{html.escape(offline_bundle_url)}">Download offline bundle</a></p>'
+        )
+
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{html.escape(title)}</title>
+  <style>
+    body {{
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 24px;
+      background: #f5f2e8;
+      color: #1f2933;
+      line-height: 1.5;
+    }}
+    main {{
+      max-width: 720px;
+      margin: 0 auto;
+      background: #fffdf7;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+    }}
+    button {{
+      margin-right: 12px;
+      margin-bottom: 12px;
+      padding: 12px 18px;
+      border: 0;
+      border-radius: 999px;
+      background: #146c43;
+      color: white;
+      font-size: 16px;
+    }}
+    button.secondary {{
+      background: #475569;
+    }}
+    pre {{
+      white-space: pre-wrap;
+      background: #f8fafc;
+      padding: 16px;
+      border-radius: 12px;
+    }}
+  </style>
+</head>
+<body>
+  <main>
+    <h1>{html.escape(title)}</h1>
+    <p>{html.escape(summary)}</p>
+    <p>This page can be saved on a phone and opened later for low-data revision. Tap Play to read the lesson aloud using the device browser voice.</p>
+    <button id="play">Play Audio Lesson</button>
+    <button id="stop" class="secondary">Stop</button>
+    {bundle_link}
+    <h2>Transcript</h2>
+    <pre>{html.escape(transcript)}</pre>
+  </main>
+  <script>
+    const transcript = {transcript_json};
+    const playButton = document.getElementById("play");
+    const stopButton = document.getElementById("stop");
+
+    function stopSpeech() {{
+      if ("speechSynthesis" in window) {{
+        window.speechSynthesis.cancel();
+      }}
+    }}
+
+    playButton.addEventListener("click", () => {{
+      if (!("speechSynthesis" in window)) {{
+        alert("This browser does not support offline speech playback. You can still read the transcript.");
+        return;
+      }}
+      stopSpeech();
+      const utterance = new SpeechSynthesisUtterance(transcript);
+      utterance.rate = 0.92;
+      utterance.pitch = 1;
+      window.speechSynthesis.speak(utterance);
+    }});
+
+    stopButton.addEventListener("click", stopSpeech);
+  </script>
+</body>
+</html>
+"""
+
+
+def offline_library_page(request):
+    subject = request.GET.get("subject", "").strip().lower() or None
+    if subject not in {None, "english", "maths"}:
+        subject = None
+
+    entries = []
+    for pack, audio_pack, bundle_slug in _offline_bundle_entries(subject=subject):
+        player_slug = audio_pack["slug"] if isinstance(audio_pack, dict) else audio_pack.slug
+        entries.append(
+            {
+                "topic": pack["topic"],
+                "summary": pack["summary"],
+                "bundle_url": f"{_get_request_base_url(request)}/offline-packs/{bundle_slug}/",
+                "text_url": f"{_get_request_base_url(request)}/packs/{pack['slug']}/",
+                "player_url": f"{_get_request_base_url(request)}/audio-packs/{player_slug}/player/",
+            }
+        )
+
+    cards = []
+    for entry in entries:
+        cards.append(
+            f"""
+            <article class="card">
+              <h2>{html.escape(entry['topic'])}</h2>
+              <p>{html.escape(entry['summary'])}</p>
+              <p><a href="{html.escape(entry['bundle_url'])}">Download offline bundle</a></p>
+              <p><a href="{html.escape(entry['text_url'])}">Download text pack</a></p>
+              <p><a href="{html.escape(entry['player_url'])}">Open audio lesson</a></p>
+            </article>
+            """
+        )
+
+    body = "\n".join(cards) if cards else "<p>No offline bundles are available yet.</p>"
+    archive_url = _offline_archive_url(_get_request_base_url(request), subject=subject)
+    archive_label = "Download full subject archive" if subject else "Download full offline archive"
+    html_page = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EduAccess Offline Library</title>
+  <style>
+    body {{
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f3efe2;
+      color: #1f2937;
+    }}
+    main {{
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+    }}
+    .hero {{
+      background: linear-gradient(135deg, #fff8e7, #d9f99d);
+      border-radius: 18px;
+      padding: 22px;
+      margin-bottom: 20px;
+    }}
+    .card {{
+      background: white;
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+    }}
+    a {{
+      color: #0f766e;
+      text-decoration: none;
+    }}
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <h1>EduAccess Offline Library</h1>
+      <p>Download bundles while connected, then keep studying later with saved text notes, transcripts, and browser audio lessons.</p>
+      <p><a href="{html.escape(archive_url)}">{html.escape(archive_label)}</a></p>
+    </section>
+    {body}
+  </main>
+</body>
+</html>
+"""
+    return HttpResponse(html_page, content_type="text/html; charset=utf-8")
+
+
 def audio_pack_transcript_download(request, slug):
     pack = _get_audio_pack(slug)
     if not pack:
@@ -832,6 +1206,99 @@ def audio_pack_transcript_download(request, slug):
     response = HttpResponse(transcript, content_type="text/plain; charset=utf-8")
     filename = slug.replace("/", "-")
     response["Content-Disposition"] = f'attachment; filename="{filename}-transcript.txt"'
+    return response
+
+
+def audio_pack_player(request, slug):
+    pack = _get_audio_pack(slug)
+    if not pack:
+        raise Http404("Audio pack not found.")
+
+    learning_pack, _, bundle_slug = _get_offline_bundle(slug)
+    offline_bundle_url = None
+    if learning_pack and bundle_slug:
+        offline_bundle_url = f"{_get_request_base_url(request)}/offline-packs/{bundle_slug}/"
+
+    html_page = _audio_pack_player_html(pack, offline_bundle_url=offline_bundle_url)
+    return HttpResponse(html_page, content_type="text/html; charset=utf-8")
+
+
+def offline_bundle_download(request, slug):
+    learning_pack, audio_pack, bundle_slug = _get_offline_bundle(slug)
+    if not learning_pack or not audio_pack or not bundle_slug:
+        raise Http404("Offline bundle not found.")
+
+    if isinstance(learning_pack, dict):
+        text_title = learning_pack["title"]
+        text_topic = learning_pack["topic"]
+        text_content = learning_pack["content"]
+        subject = learning_pack["subject"]
+    else:
+        text_title = learning_pack.title
+        text_topic = learning_pack.topic
+        text_content = learning_pack.content
+        subject = learning_pack.subject
+
+    audio_title, audio_summary, transcript = _audio_pack_content(audio_pack)
+    bundle_url = f"{_get_request_base_url(request)}/offline-packs/{bundle_slug}/"
+    player_html = _audio_pack_player_html(audio_pack, offline_bundle_url=bundle_url)
+
+    readme = (
+        f"EduAccess Offline Study Bundle\n"
+        f"Subject: {subject}\n"
+        f"Topic: {text_topic}\n"
+        f"Text pack: {text_title}\n"
+        f"Audio lesson: {audio_title}\n\n"
+        "Files included:\n"
+        "- lesson.txt: revision notes for the topic\n"
+        "- audio-transcript.txt: short spoken-style revision transcript\n"
+        "- audio-player.html: open this file in a browser to play the lesson aloud with the phone voice\n\n"
+        "Tip: download this bundle while you still have internet, then keep it on the phone for offline revision.\n"
+    )
+
+    bundle_bytes = BytesIO()
+    with zipfile.ZipFile(bundle_bytes, "w", compression=zipfile.ZIP_DEFLATED) as bundle_zip:
+        bundle_zip.writestr("README.txt", readme)
+        bundle_zip.writestr("lesson.txt", text_content)
+        bundle_zip.writestr("audio-transcript.txt", transcript)
+        bundle_zip.writestr("audio-summary.txt", audio_summary)
+        bundle_zip.writestr("audio-player.html", player_html)
+
+    response = HttpResponse(bundle_bytes.getvalue(), content_type="application/zip")
+    response["Content-Disposition"] = f'attachment; filename="{bundle_slug}-offline-bundle.zip"'
+    return response
+
+
+def offline_library_download(request):
+    subject = request.GET.get("subject", "").strip().lower() or None
+    if subject not in {None, "english", "maths"}:
+        subject = None
+
+    entries = _offline_bundle_entries(subject=subject)
+    if not entries:
+        raise Http404("Offline archive not found.")
+
+    archive_bytes = BytesIO()
+    with zipfile.ZipFile(archive_bytes, "w", compression=zipfile.ZIP_DEFLATED) as archive_zip:
+        archive_readme = [
+            "EduAccess Full Offline Archive",
+            "",
+            "This archive collects every available topic bundle for offline study.",
+            "Open any bundle zip and use the text notes, transcript, and audio-player.html file.",
+            "",
+            "Included topics:",
+        ]
+        for pack, _, bundle_slug in entries:
+            archive_readme.append(f"- {pack['topic']} ({bundle_slug})")
+        archive_zip.writestr("README.txt", "\n".join(archive_readme) + "\n")
+
+        for _, _, bundle_slug in entries:
+            bundle_response = offline_bundle_download(request, bundle_slug)
+            archive_zip.writestr(f"{bundle_slug}.zip", bundle_response.content)
+
+    filename = f"{subject}-offline-library.zip" if subject else "eduaccess-offline-library.zip"
+    response = HttpResponse(archive_bytes.getvalue(), content_type="application/zip")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
     return response
 
 
@@ -869,6 +1336,21 @@ def whatsapp_webhook(request):
                     reply = _set_low_data_mode(progress, True)
                 elif normalized_msg in LOW_DATA_OFF_MESSAGES:
                     reply = _set_low_data_mode(progress, False)
+                elif normalized_msg == "offline library" or normalized_msg.startswith("offline library "):
+                    requested_subject = _extract_pack_subject(normalized_msg)
+                    reply = _offline_library_reply(
+                        base_url=_get_request_base_url(request),
+                        subject=requested_subject,
+                    )
+                elif normalized_msg == "offline all" or normalized_msg.startswith("offline all "):
+                    requested_subject = _extract_pack_subject(normalized_msg)
+                    reply = _offline_archive_reply(
+                        base_url=_get_request_base_url(request),
+                        subject=requested_subject,
+                    )
+                elif normalized_msg in OFFLINE_PACK_MESSAGES or normalized_msg.startswith("offline packs "):
+                    requested_subject = _extract_pack_subject(normalized_msg)
+                    reply = _list_offline_bundles(subject=requested_subject)
                 elif normalized_msg in AUDIO_PACK_MESSAGES or normalized_msg.startswith("audio packs "):
                     requested_audio_subject = _extract_pack_subject(normalized_msg)
                     reply = _list_audio_packs(subject=requested_audio_subject)
@@ -886,6 +1368,16 @@ def whatsapp_webhook(request):
                         )
                     else:
                         reply = "I could not find that audio pack. Send 'audio packs' to see available audio packs."
+                elif normalized_msg.startswith("offline pack ") or normalized_msg.startswith("download offline pack ") or normalized_msg.startswith("offline bundle "):
+                    bundle_query = _extract_offline_pack_query(normalized_msg)
+                    learning_pack, audio_pack, bundle_slug = _get_offline_bundle(bundle_query) if bundle_query else (None, None, None)
+                    if learning_pack and audio_pack and bundle_slug:
+                        reply = (
+                            "Offline bundle ready.\n"
+                            f"Download: {_get_request_base_url(request)}/offline-packs/{bundle_slug}/"
+                        )
+                    else:
+                        reply = "I could not find that offline bundle. Send 'offline packs' to see available bundles."
                 elif normalized_msg.startswith("pack ") or normalized_msg.startswith("get pack "):
                     pack_query = _extract_pack_query(normalized_msg)
                     pack = _get_learning_pack(pack_query) if pack_query else None
