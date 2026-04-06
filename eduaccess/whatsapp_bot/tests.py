@@ -1,3 +1,5 @@
+import zipfile
+from io import BytesIO
 from unittest.mock import patch
 
 from django.test import TestCase
@@ -325,6 +327,7 @@ class WhatsAppWebhookTests(TestCase):
         body = response.content.decode().lower()
         self.assertIn("passive voice pack", body)
         self.assertIn("/packs/english-passive-voice/", body)
+        self.assertIn("/offline-packs/english-passive-voice/", body)
 
     def test_learning_pack_download_endpoint_returns_text_file(self):
         response = self.client.get(
@@ -358,7 +361,9 @@ class WhatsAppWebhookTests(TestCase):
         self.assertEqual(response.status_code, 200)
         body = response.content.decode().lower()
         self.assertIn("passive voice audio pack", body)
+        self.assertIn("/audio-packs/audio-english-passive-voice/player/", body)
         self.assertIn("/audio-packs/audio-english-passive-voice/transcript/", body)
+        self.assertIn("/offline-packs/english-passive-voice/", body)
 
     def test_audio_pack_transcript_download_endpoint_returns_text_file(self):
         response = self.client.get(
@@ -369,6 +374,115 @@ class WhatsAppWebhookTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("attachment;", response["Content-Disposition"])
         self.assertIn("Passive voice focuses on the receiver", response.content.decode())
+
+    def test_audio_pack_player_endpoint_returns_html_page(self):
+        response = self.client.get(
+            "/audio-packs/audio-english-passive-voice/player/",
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("text/html", response["Content-Type"])
+        self.assertIn("Play Audio Lesson", response.content.decode())
+        self.assertIn("speechSynthesis", response.content.decode())
+
+    def test_offline_bundles_can_be_listed(self):
+        response = self.client.post(
+            "/whatsapp/",
+            {"Body": "offline packs", "From": "whatsapp:+161616161"},
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode().lower()
+        self.assertIn("offline study bundles", body)
+        self.assertIn("offline pack algebra", body)
+
+    def test_offline_library_command_returns_library_link(self):
+        response = self.client.post(
+            "/whatsapp/",
+            {"Body": "offline library", "From": "whatsapp:+161600000"},
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode().lower()
+        self.assertIn("offline library is ready", body)
+        self.assertIn("/offline-library/", body)
+
+    def test_offline_all_command_returns_archive_link(self):
+        response = self.client.post(
+            "/whatsapp/",
+            {"Body": "offline all", "From": "whatsapp:+161600001"},
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode().lower()
+        self.assertIn("full offline archive is ready", body)
+        self.assertIn("/offline-library/download/", body)
+
+    def test_offline_bundle_can_be_requested_by_topic(self):
+        response = self.client.post(
+            "/whatsapp/",
+            {"Body": "offline pack passive voice", "From": "whatsapp:+171717171"},
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode().lower()
+        self.assertIn("offline bundle ready", body)
+        self.assertIn("/offline-packs/english-passive-voice/", body)
+
+    def test_offline_bundle_download_endpoint_returns_zip_bundle(self):
+        response = self.client.get(
+            "/offline-packs/english-passive-voice/",
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/zip")
+        self.assertIn("offline-bundle.zip", response["Content-Disposition"])
+
+        with zipfile.ZipFile(BytesIO(response.content)) as bundle_zip:
+            names = set(bundle_zip.namelist())
+            self.assertIn("README.txt", names)
+            self.assertIn("lesson.txt", names)
+            self.assertIn("audio-transcript.txt", names)
+            self.assertIn("audio-player.html", names)
+            self.assertIn("PASSIVE VOICE", bundle_zip.read("lesson.txt").decode())
+            self.assertIn("speechSynthesis", bundle_zip.read("audio-player.html").decode())
+
+    def test_offline_library_page_lists_downloadable_entries(self):
+        response = self.client.get(
+            "/offline-library/",
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode().lower()
+        self.assertIn("eduaccess offline library", body)
+        self.assertIn("/offline-library/download/", body)
+        self.assertIn("/offline-packs/maths-algebra-basics/", body)
+        self.assertIn("/audio-packs/audio-maths-algebra-basics/player/", body)
+
+    def test_offline_library_download_returns_zip_of_bundle_zips(self):
+        response = self.client.get(
+            "/offline-library/download/",
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/zip")
+        self.assertIn("eduaccess-offline-library.zip", response["Content-Disposition"])
+
+        with zipfile.ZipFile(BytesIO(response.content)) as archive_zip:
+            names = set(archive_zip.namelist())
+            self.assertIn("README.txt", names)
+            self.assertIn("maths-algebra-basics.zip", names)
+            nested_bundle = archive_zip.read("maths-algebra-basics.zip")
+            with zipfile.ZipFile(BytesIO(nested_bundle)) as bundle_zip:
+                self.assertIn("lesson.txt", bundle_zip.namelist())
 
     @patch("whatsapp_bot.views.ask_ai")
     def test_offline_mode_uses_local_pack_reply_for_topic_question(self, mock_ask_ai):

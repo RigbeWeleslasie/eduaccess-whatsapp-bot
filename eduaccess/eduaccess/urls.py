@@ -17,14 +17,22 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from whatsapp_bot.views import (
+    audio_pack_player,
     audio_pack_transcript_download,
     learning_pack_download,
+    offline_library_download,
+    offline_library_page,
+    offline_bundle_download,
     whatsapp_webhook,
 )
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('audio-packs/<slug:slug>/player/', audio_pack_player),
     path('audio-packs/<slug:slug>/transcript/', audio_pack_transcript_download),
+    path('offline-library/download/', offline_library_download),
+    path('offline-library/', offline_library_page),
+    path('offline-packs/<slug:slug>/', offline_bundle_download),
     path('packs/<slug:slug>/', learning_pack_download),
     path('whatsapp/', whatsapp_webhook),
 ]
