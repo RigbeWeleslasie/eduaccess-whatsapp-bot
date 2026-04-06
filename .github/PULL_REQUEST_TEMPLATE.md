@@ -10,7 +10,7 @@
 Describe what you changed in this PR:
 
 - [ ] Added / modified file(s):  
-  - `...`
+
 - [ ] Modified models / DB schema?  
   - [ ] Yes → briefly describe migration impact  
   - [ ] No
