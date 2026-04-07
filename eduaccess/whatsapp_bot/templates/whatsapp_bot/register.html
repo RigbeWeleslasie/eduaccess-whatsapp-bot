@@ -2,6 +2,16 @@
 
 {% block title %}Register | EduAccess{% endblock %}
 
+{% block extra_head %}
+  <style>
+    .submit-note {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+  </style>
+{% endblock %}
+
 {% block content %}
   <section class="hero">
     <span class="eyebrow">Create Student Account</span>
@@ -15,7 +25,7 @@
   <section class="mini-grid two-up">
     <article class="card stack">
       <h2>Register</h2>
-      <form method="post" class="stack">
+      <form method="post" class="stack" id="register-form">
         {% csrf_token %}
         {{ form.non_field_errors }}
         <div class="field">
@@ -39,9 +49,10 @@
           {{ form.password2.errors }}
         </div>
         <div class="actions auth-actions">
-          <button class="btn" type="submit">Create Account</button>
+          <button class="btn" type="submit" id="register-submit">Create Account</button>
           <a class="btn secondary" href="{% url 'login' %}">Login Instead</a>
         </div>
+        <p class="submit-note" id="register-status" hidden>Creating your account...</p>
       </form>
     </article>
 
@@ -57,4 +68,22 @@
       </div>
     </article>
   </section>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script>
+    const registerForm = document.getElementById("register-form");
+    const registerSubmit = document.getElementById("register-submit");
+    const registerStatus = document.getElementById("register-status");
+
+    if (registerForm && registerSubmit) {
+      registerForm.addEventListener("submit", function () {
+        registerSubmit.disabled = true;
+        registerSubmit.textContent = "Creating...";
+        if (registerStatus) {
+          registerStatus.hidden = false;
+        }
+      });
+    }
+  </script>
 {% endblock %}
