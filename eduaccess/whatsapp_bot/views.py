@@ -1,6 +1,7 @@
 # eduaccess/whatsapp/views.py
 import json
 import re
+import traceback
 
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
@@ -31,6 +32,13 @@ from .ai import (
 
 def _get_request_base_url(request):
     return f"{request.scheme}://{request.get_host()}"
+
+
+def _normalize_whatsapp_sender(raw_sender):
+    sender = (raw_sender or "").strip()
+    if sender.startswith("whatsapp:"):
+        sender = sender.split(":", 1)[1]
+    return sender or "unknown"
 
 
 def _empty_practice_state():
@@ -838,21 +846,28 @@ def audio_pack_player(request, slug):
 def whatsapp_webhook(request):
     if request.method == "POST":
         incoming_msg = request.POST.get("Body", "").strip()
-        phone_number = request.POST.get("From", "").strip() or "unknown"
+        raw_sender = request.POST.get("From", "")
+        phone_number = _normalize_whatsapp_sender(raw_sender)
         print(
-            f"[whatsapp_webhook] method=POST from={phone_number} "
+            f"[whatsapp_webhook] method=POST from={raw_sender} normalized={phone_number} "
             f"has_body={bool(incoming_msg)} host={request.get_host()}"
         )
-        progress, practice_state = _load_whatsapp_practice_state(phone_number)
-
         resp = MessagingResponse()
         msg = resp.message()
-
-        if incoming_msg:
-            reply = _build_tutor_reply(request, incoming_msg, practice_state)
-            _save_whatsapp_practice_state(progress, practice_state)
-        else:
-            reply = "Hi! Please send a message so I can help you."
+        try:
+            progress, practice_state = _load_whatsapp_practice_state(phone_number)
+            if incoming_msg:
+                reply = _build_tutor_reply(request, incoming_msg, practice_state)
+                _save_whatsapp_practice_state(progress, practice_state)
+            else:
+                reply = "Hi! Please send a message so I can help you."
+        except Exception:
+            print("[whatsapp_webhook] error while processing request")
+            traceback.print_exc()
+            reply = (
+                "Sorry, I could not process your WhatsApp message right now. "
+                "Please try again in a moment."
+            )
 
         msg.body(reply)
         return HttpResponse(str(resp), content_type="application/xml")
