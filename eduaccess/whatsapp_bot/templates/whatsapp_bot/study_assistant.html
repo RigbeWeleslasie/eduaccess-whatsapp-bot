@@ -1,0 +1,423 @@
+{% extends "whatsapp_bot/base_pwa.html" %}
+
+{% block title %}EduAccess Study Assistant{% endblock %}
+
+{% block extra_head %}
+  <style>
+    .study-shell {
+      display: grid;
+      gap: 18px;
+    }
+    .commands-card {
+      padding: 18px 20px;
+    }
+    .commands-card h2 {
+      margin-bottom: 10px;
+    }
+    .commands-card p {
+      margin: 0;
+    }
+    .chat-frame {
+      background: rgba(255, 253, 247, 0.92);
+      border: 1px solid rgba(15, 118, 110, 0.12);
+      border-radius: 26px;
+      box-shadow: 0 20px 48px rgba(32, 48, 60, 0.1);
+      overflow: hidden;
+    }
+    .chat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 22px;
+      border-bottom: 1px solid rgba(15, 118, 110, 0.1);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(247, 243, 232, 0.72));
+    }
+    .chat-heading {
+      display: grid;
+      gap: 4px;
+    }
+    .chat-heading h2 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+    .chat-heading p {
+      margin: 0;
+      font-size: 0.95rem;
+    }
+    .chat-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--brand-soft);
+      color: var(--brand);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+    .chat-status::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #18b38a;
+      box-shadow: 0 0 0 4px rgba(24, 179, 138, 0.16);
+    }
+    .conversation {
+      display: grid;
+      gap: 0;
+      max-height: min(62vh, 640px);
+      overflow-y: auto;
+      scroll-behavior: smooth;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.1)),
+        radial-gradient(circle at top, rgba(215, 243, 238, 0.48), transparent 36%);
+    }
+    .message-row {
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr);
+      gap: 14px;
+      padding: 18px 22px;
+      align-items: start;
+    }
+    .message-row.student {
+      grid-template-columns: 44px minmax(0, 1fr);
+    }
+    .message-row.student .message-avatar {
+      order: 1;
+    }
+    .message-row.student .message-content {
+      order: 2;
+      justify-self: stretch;
+      max-width: 100%;
+      display: grid;
+      justify-items: start;
+    }
+    .message-row.assistant {
+      background: rgba(255, 255, 255, 0.42);
+      border-top: 1px solid rgba(15, 118, 110, 0.06);
+      border-bottom: 1px solid rgba(15, 118, 110, 0.06);
+    }
+    .message-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #fff;
+      background: linear-gradient(135deg, #0f766e, #159a83);
+      box-shadow: 0 12px 24px rgba(15, 118, 110, 0.18);
+    }
+    .message-row.student .message-avatar {
+      background: linear-gradient(135deg, #f59e0b, #f97316);
+      box-shadow: 0 12px 24px rgba(245, 158, 11, 0.18);
+    }
+    .message-content {
+      min-width: 0;
+      max-width: min(100%, 48rem);
+    }
+    .message-label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .bubble {
+      width: 100%;
+      max-width: 100%;
+      padding: 16px 18px;
+      border-radius: 22px;
+      white-space: pre-wrap;
+      line-height: 1.65;
+      font-size: 15px;
+    }
+    .bubble.student {
+      width: 100%;
+      max-width: 100%;
+      background: rgba(255, 255, 255, 0.9);
+      color: #173247;
+      border: 1px solid rgba(52, 115, 160, 0.12);
+      border-top-left-radius: 10px;
+      padding: 18px 20px;
+      box-shadow: 0 16px 28px rgba(52, 115, 160, 0.1);
+    }
+    .bubble.assistant {
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid rgba(15, 118, 110, 0.12);
+      border-top-left-radius: 10px;
+      box-shadow: 0 16px 28px rgba(32, 48, 60, 0.08);
+    }
+    .bubble a {
+      color: var(--brand);
+      font-weight: 800;
+      text-decoration-thickness: 2px;
+      word-break: break-word;
+    }
+    .chat-actions {
+      align-items: center;
+      justify-content: space-between;
+    }
+    .quick-prompts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .command-strip {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      scrollbar-width: thin;
+    }
+    .command-strip::-webkit-scrollbar {
+      height: 8px;
+    }
+    .command-strip::-webkit-scrollbar-thumb {
+      background: rgba(15, 118, 110, 0.22);
+      border-radius: 999px;
+    }
+    .command-chip {
+      flex: 0 0 auto;
+      min-width: 188px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      background: #f8f5eb;
+      border: 1px solid rgba(15, 118, 110, 0.14);
+    }
+    .command-chip strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--brand);
+      font-size: 14px;
+    }
+    .command-chip span {
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    .prompt-chip {
+      border: 1px solid rgba(15, 118, 110, 0.22);
+      background: #fff;
+      color: var(--brand);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font: inherit;
+      cursor: pointer;
+    }
+    .composer-card {
+      position: sticky;
+      bottom: 0;
+      z-index: 2;
+      padding: 18px 22px 22px;
+      background: rgba(255, 253, 247, 0.94);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(15, 118, 110, 0.1);
+    }
+    .composer-card h2 {
+      margin-bottom: 10px;
+    }
+    .composer-card .field {
+      gap: 10px;
+    }
+    .composer-card label {
+      color: var(--muted);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .composer-card textarea {
+      min-height: 110px;
+      padding: 12px 22px;
+      border-radius: 24px;
+      border-color: rgba(15, 118, 110, 0.12);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 252, 250, 0.94));
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.92),
+        0 10px 22px rgba(15, 118, 110, 0.06);
+      line-height: 1.6;
+    }
+    .composer-card textarea::placeholder {
+      color: rgba(93, 109, 116, 0.9);
+    }
+    @media (max-width: 719px) {
+      .conversation {
+        max-height: 54vh;
+      }
+      .composer-card {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+      .chat-header,
+      .message-row {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+      .message-row,
+      .message-row.student {
+        grid-template-columns: 36px minmax(0, 1fr);
+      }
+      .message-row.student .message-avatar {
+        order: 1;
+      }
+      .message-row.student .message-content {
+        order: 2;
+        justify-self: stretch;
+        max-width: 100%;
+      }
+      .message-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 12px;
+        font-size: 11px;
+      }
+      .chat-header {
+        display: grid;
+        grid-template-columns: 1fr;
+        align-items: start;
+      }
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <span class="eyebrow">Same Tutor, Web Version</span>
+    <h1>EduAccess Study Assistant</h1>
+    <p>Use the same commands available on WhatsApp right here in the app. Ask a question, request a Maths or English pack, or open the offline library.</p>
+    <div class="actions">
+      <a class="btn secondary" href="{% url 'offline_library' %}">Open Offline Library</a>
+    </div>
+  </section>
+
+  <section class="study-shell">
+    <article class="card stack commands-card">
+      <h2>Try these commands</h2>
+      <div class="command-strip">
+        <div class="command-chip">
+          <strong>Ask a question</strong>
+          <span>"Explain algebra"</span>
+        </div>
+        <div class="command-chip">
+          <strong>English practice</strong>
+          <span>"practice english"</span>
+        </div>
+        <div class="command-chip">
+          <strong>Maths practice</strong>
+          <span>"practice maths"</span>
+        </div>
+        <div class="command-chip">
+          <strong>Open library</strong>
+          <span>"offline library"</span>
+        </div>
+        <div class="command-chip">
+          <strong>Maths pack</strong>
+          <span>"pack algebra"</span>
+        </div>
+        <div class="command-chip">
+          <strong>English pack</strong>
+          <span>"pack passive voice"</span>
+        </div>
+        <div class="command-chip">
+          <strong>Maths audio</strong>
+          <span>"audio pack algebra"</span>
+        </div>
+        <div class="command-chip">
+          <strong>English audio</strong>
+          <span>"audio pack passive voice"</span>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <section class="study-shell">
+    <article class="chat-frame">
+      <div class="chat-header">
+        <div class="chat-heading">
+          <h2>Conversation</h2>
+          <p>Ask naturally and keep learning resources close to the chat.</p>
+        </div>
+        <span class="chat-status">EduAccess ready</span>
+      </div>
+      <div class="conversation" id="conversation">
+        {% for item in history %}
+          <div class="message-row {{ item.role }}">
+            <div class="message-avatar">{% if item.role == "student" %}You{% else %}EA{% endif %}</div>
+            <div class="message-content">
+              <span class="message-label">{% if item.role == "student" %}You{% else %}EduAccess{% endif %}</span>
+              <div class="bubble {{ item.role }}">
+                {% if item.role == "assistant" %}
+                  {{ item.text|linebreaksbr|urlize }}
+                {% else %}
+                  {{ item.text|linebreaksbr }}
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        {% empty %}
+          <div class="message-row assistant">
+            <div class="message-avatar">EA</div>
+            <div class="message-content">
+              <span class="message-label">EduAccess</span>
+              <div class="bubble assistant">
+                Hello. You can ask for help with English or Maths, request a pack, or open the offline library.
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="composer-card">
+        <h2>Ask EduAccess</h2>
+        <div class="quick-prompts">
+          <button class="prompt-chip" type="button" data-prompt="practice english">Practice English</button>
+          <button class="prompt-chip" type="button" data-prompt="practice maths">Practice Maths</button>
+          <button class="prompt-chip" type="button" data-prompt="offline library">Offline Library</button>
+          <button class="prompt-chip" type="button" data-prompt="pack algebra">Pack Algebra</button>
+        </div>
+        <form method="post" class="stack" id="chat-form">
+          {% csrf_token %}
+          <div class="field">
+            <label for="question">Message</label>
+            <textarea id="question" name="question" placeholder="Type the same kind of request you would send on WhatsApp."></textarea>
+          </div>
+          <div class="actions chat-actions">
+            <button class="btn" type="submit">Send</button>
+            <button class="btn secondary" type="submit" name="clear" value="1">Clear Chat</button>
+          </div>
+        </form>
+      </div>
+    </article>
+  </section>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script>
+    const conversation = document.getElementById("conversation");
+    const questionField = document.getElementById("question");
+    const quickPromptButtons = document.querySelectorAll("[data-prompt]");
+
+    if (conversation) {
+      conversation.scrollTop = conversation.scrollHeight;
+    }
+
+    quickPromptButtons.forEach(function (button) {
+      button.addEventListener("click", function () {
+        if (!questionField) {
+          return;
+        }
+        questionField.value = button.dataset.prompt || "";
+        questionField.focus();
+      });
+    });
+  </script>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "whatsapp_bot/base_pwa.html" %}
+
+{% block title %}Register | EduAccess{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <span class="eyebrow">Create Student Account</span>
+    <h1>Create your EduAccess account</h1>
+    <p>Register once so your study assistant history, offline resources, and practice progress can stay linked to you.</p>
+    <div class="actions">
+      <a class="btn secondary" href="{% url 'login' %}">Already Have an Account</a>
+    </div>
+  </section>
+
+  <section class="mini-grid two-up">
+    <article class="card stack">
+      <h2>Register</h2>
+      <form method="post" class="stack">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="field">
+          <label for="{{ form.username.id_for_label }}">Username</label>
+          {{ form.username }}
+          {{ form.username.errors }}
+        </div>
+        <div class="field">
+          <label for="{{ form.email.id_for_label }}">Email</label>
+          {{ form.email }}
+          {{ form.email.errors }}
+        </div>
+        <div class="field">
+          <label for="{{ form.password1.id_for_label }}">Password</label>
+          {{ form.password1 }}
+          {{ form.password1.errors }}
+        </div>
+        <div class="field">
+          <label for="{{ form.password2.id_for_label }}">Confirm Password</label>
+          {{ form.password2 }}
+          {{ form.password2.errors }}
+        </div>
+        <div class="actions auth-actions">
+          <button class="btn" type="submit">Create Account</button>
+          <a class="btn secondary" href="{% url 'login' %}">Login Instead</a>
+        </div>
+      </form>
+    </article>
+
+    <article class="card stack">
+      <h2>What You Unlock</h2>
+      <div class="soft-card">
+        <p class="kicker">Saved Progress</p>
+        <p>Your subject practice score and learning progress are stored with your student account.</p>
+      </div>
+      <div class="soft-card">
+        <p class="kicker">Learning Tools</p>
+        <p>Get access to the study assistant, downloadable packs, transcripts, and the student dashboard.</p>
+      </div>
+    </article>
+  </section>
+{% endblock %}
