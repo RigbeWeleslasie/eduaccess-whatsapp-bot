@@ -1,0 +1,52 @@
+{% extends "whatsapp_bot/base_pwa.html" %}
+
+{% block title %}Login | EduAccess{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <span class="eyebrow">Student Login</span>
+    <h1>Welcome back</h1>
+    <p>Sign in to open the study assistant, offline library, downloads, and your saved learning progress.</p>
+    <div class="actions">
+      <a class="btn" href="{% url 'register' %}">Create Account</a>
+      <a class="btn secondary" href="{% url 'offline_fallback' %}">See Offline Help</a>
+    </div>
+  </section>
+
+  <section class="mini-grid two-up">
+    <article class="card stack">
+      <h2>Login</h2>
+      <form method="post" class="stack">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="field">
+          <label for="{{ form.username.id_for_label }}">Username</label>
+          {{ form.username }}
+          {{ form.username.errors }}
+        </div>
+        <div class="field">
+          <label for="{{ form.password.id_for_label }}">Password</label>
+          {{ form.password }}
+          {{ form.password.errors }}
+        </div>
+        <input type="hidden" name="next" value="{{ next|default:'' }}">
+        <div class="actions auth-actions">
+          <button class="btn" type="submit">Login</button>
+          <a class="btn secondary" href="{% url 'register' %}">Create Account</a>
+        </div>
+      </form>
+    </article>
+
+    <article class="card stack">
+      <h2>Demo Flow</h2>
+      <div class="soft-card">
+        <p class="kicker">Mentor Demo</p>
+        <p>Login, open the study assistant, try `practice maths`, answer a question, then open the dashboard to show saved progress.</p>
+      </div>
+      <div class="soft-card">
+        <p class="kicker">Resources</p>
+        <p>After login, open the offline library to show learning packs, transcripts, and audio lesson access.</p>
+      </div>
+    </article>
+  </section>
+{% endblock %}

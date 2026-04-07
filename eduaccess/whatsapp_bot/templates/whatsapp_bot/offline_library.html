@@ -1,0 +1,59 @@
+{% extends "whatsapp_bot/base_pwa.html" %}
+
+{% block title %}EduAccess Offline Library{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <span class="eyebrow">Installable Study App</span>
+    <h1>EduAccess Offline Library</h1>
+    <p>Save this page to your phone, install it like an app, and keep your study materials close even when the network is weak.</p>
+    <div class="actions">
+      <button id="install-app" class="btn" type="button">Install EduAccess</button>
+      <a class="btn" href="{% url 'study_assistant' %}">Open Study Assistant</a>
+      <a class="btn secondary" href="{% url 'offline_fallback' %}">Offline Help</a>
+      <a class="btn secondary" href="{% url 'offline_library' %}">All Subjects</a>
+      <a class="btn secondary" href="{% url 'offline_library' %}?subject=maths">Maths</a>
+      <a class="btn secondary" href="{% url 'offline_library' %}?subject=english">English</a>
+    </div>
+    <p id="install-status" class="install-note" hidden></p>
+  </section>
+
+  <section class="card stack">
+    <h2>Why This Matters</h2>
+    <div class="mini-grid two-up">
+      <div class="soft-card">
+        <p class="kicker">Low-Data Access</p>
+        <p>Students can open packs, transcripts, and audio lessons from one lightweight library view.</p>
+      </div>
+      <div class="soft-card">
+        <p class="kicker">Demo Tip</p>
+        <p>Show this page after the dashboard to demonstrate that EduAccess combines practice support with reusable learning resources.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid two-up">
+    {% for entry in entries %}
+      <article class="card">
+        <div class="meta">
+          {{ entry.subject }}
+          {% if entry.is_recent_topic %}
+            - Recent Topic
+          {% endif %}
+        </div>
+        <h2>{{ entry.topic }}</h2>
+        <p>{{ entry.summary }}</p>
+        <div class="links">
+          <a class="btn" href="{{ entry.text_url }}">Download Text Pack</a>
+          <a class="btn secondary" href="{{ entry.audio_url }}">Open Audio Lesson</a>
+          <a class="btn secondary" href="{{ entry.transcript_url }}">Transcript</a>
+        </div>
+      </article>
+    {% empty %}
+      <article class="card">
+        <h2>No packs yet</h2>
+        <p>There are no offline study materials for this filter yet. Try another subject or add more packs.</p>
+      </article>
+    {% endfor %}
+  </section>
+{% endblock %}

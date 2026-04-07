@@ -10,13 +10,24 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
-from pathlib import Path
 import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+try:
+    import dj_database_url
+except ImportError:
+    dj_database_url = None
+
+try:
+    import whitenoise  # noqa: F401
+except ImportError:
+    whitenoise = None
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-from dotenv import load_dotenv
 load_dotenv(BASE_DIR / ".env", override=True)
 
 
@@ -24,12 +35,23 @@ load_dotenv(BASE_DIR / ".env", override=True)
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-tqo4$jtop&s0nc(=7h0m1#4+spz&zw(6jr5jthmj_+!_*y*^8+'
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-dev-only-key")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() == "true"
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'supercultivated-nilda-pyrheliometric.ngrok-free.dev']
+
+def _get_list_env(name, default=""):
+    raw_value = os.getenv(name, default)
+    return [item.strip() for item in raw_value.split(",") if item.strip()]
+
+
+ALLOWED_HOSTS = _get_list_env(
+    "DJANGO_ALLOWED_HOSTS",
+    "127.0.0.1,localhost,supercultivated-nilda-pyrheliometric.ngrok-free.dev",
+)
+
+CSRF_TRUSTED_ORIGINS = _get_list_env("DJANGO_CSRF_TRUSTED_ORIGINS", "")
 
 
 # Application definition
@@ -54,6 +76,9 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+if whitenoise is not None:
+    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+
 ROOT_URLCONF = 'eduaccess.urls'
 
 TEMPLATES = [
@@ -77,12 +102,23 @@ WSGI_APPLICATION = 'eduaccess.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+DB_SSL_REQUIRE = os.getenv("DJANGO_DB_SSL_REQUIRE", "False").lower() == "true"
+
+if dj_database_url is not None:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+            conn_max_age=600,
+            ssl_require=DB_SSL_REQUIRE,
+        )
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -122,8 +158,32 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+if whitenoise is not None:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+SESSION_COOKIE_NAME = os.getenv("DJANGO_SESSION_COOKIE_NAME", "eduaccess_sessionid")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+LOGIN_REDIRECT_URL = '/study-assistant/'
+LOGIN_URL = '/login/'
+LOGOUT_REDIRECT_URL = '/login/'
+
+LOCAL_DEV_HOSTS = {"127.0.0.1", "localhost"}
+IS_LOCAL_ONLY = set(ALLOWED_HOSTS).issubset(LOCAL_DEV_HOSTS)
+
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = (
+        os.getenv("DJANGO_SECURE_SSL_REDIRECT", "True").lower() == "true"
+        and not IS_LOCAL_ONLY
+    )
+else:
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
