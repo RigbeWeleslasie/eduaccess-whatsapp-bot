@@ -839,6 +839,10 @@ def whatsapp_webhook(request):
     if request.method == "POST":
         incoming_msg = request.POST.get("Body", "").strip()
         phone_number = request.POST.get("From", "").strip() or "unknown"
+        print(
+            f"[whatsapp_webhook] method=POST from={phone_number} "
+            f"has_body={bool(incoming_msg)} host={request.get_host()}"
+        )
         progress, practice_state = _load_whatsapp_practice_state(phone_number)
 
         resp = MessagingResponse()
@@ -853,4 +857,5 @@ def whatsapp_webhook(request):
         msg.body(reply)
         return HttpResponse(str(resp), content_type="application/xml")
 
+    print(f"[whatsapp_webhook] method={request.method} host={request.get_host()}")
     return HttpResponse("Hello, this endpoint is for WhatsApp messages only.")
