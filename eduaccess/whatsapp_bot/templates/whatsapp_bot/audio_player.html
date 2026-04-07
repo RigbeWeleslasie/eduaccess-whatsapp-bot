@@ -1,0 +1,49 @@
+{% extends "whatsapp_bot/base_pwa.html" %}
+
+{% block title %}{{ pack.title }}{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <span class="eyebrow">Browser Audio Lesson</span>
+    <h1>{{ pack.title }}</h1>
+    <p>{{ pack.summary }}</p>
+    <div class="actions">
+      <button class="btn" id="play-audio">Play Audio Lesson</button>
+      <button class="btn secondary" id="stop-audio">Stop</button>
+      <a class="btn secondary" href="../transcript/">Download Transcript</a>
+    </div>
+  </section>
+
+  <article class="card">
+    <h2>Transcript</h2>
+    <pre id="lesson-transcript">{{ pack.transcript }}</pre>
+  </article>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script>
+    const transcript = document.getElementById("lesson-transcript").textContent.trim();
+    const playButton = document.getElementById("play-audio");
+    const stopButton = document.getElementById("stop-audio");
+
+    function stopSpeech() {
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    }
+
+    playButton.addEventListener("click", function () {
+      if (!("speechSynthesis" in window)) {
+        alert("This browser does not support audio playback from text yet.");
+        return;
+      }
+      stopSpeech();
+      const utterance = new SpeechSynthesisUtterance(transcript);
+      utterance.rate = 0.92;
+      utterance.pitch = 1;
+      window.speechSynthesis.speak(utterance);
+    });
+
+    stopButton.addEventListener("click", stopSpeech);
+  </script>
+{% endblock %}

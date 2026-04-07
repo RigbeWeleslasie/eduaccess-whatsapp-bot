@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: eduaccess
+    env: python
+    plan: free
+    rootDir: eduaccess
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn eduaccess.wsgi --log-file -"
+    envVars:
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: DJANGO_ALLOWED_HOSTS
+        value: "eduaccess.onrender.com"
+      - key: DJANGO_CSRF_TRUSTED_ORIGINS
+        value: "https://eduaccess.onrender.com"
+      - key: PYTHON_VERSION
+        value: "3.10.16"

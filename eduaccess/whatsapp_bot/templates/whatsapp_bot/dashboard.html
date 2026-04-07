@@ -1,0 +1,99 @@
+{% extends "whatsapp_bot/base_pwa.html" %}
+
+{% block title %}Dashboard | EduAccess{% endblock %}
+
+{% block extra_head %}
+  <style>
+    .stats-grid {
+      display: grid;
+      gap: 16px;
+    }
+    .stat-value {
+      font-size: 32px;
+      color: var(--brand);
+      font-weight: 700;
+      line-height: 1.1;
+    }
+    .subject-grid {
+      display: grid;
+      gap: 16px;
+    }
+    .subject-card {
+      border: 1px solid rgba(15, 118, 110, 0.14);
+    }
+    .subject-label {
+      margin: 0 0 8px;
+      color: var(--brand);
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .subject-score {
+      font-size: 24px;
+      font-weight: 700;
+    }
+    @media (min-width: 720px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .subject-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <span class="eyebrow">Student Dashboard</span>
+    <h1>{{ request.user.username }}'s learning overview</h1>
+    <p>Use this page to show saved progress, subject performance, and current study status during the MVP demo.</p>
+    <div class="actions">
+      <a class="btn" href="{% url 'study_assistant' %}">Open Study Assistant</a>
+      <a class="btn secondary" href="{% url 'offline_library' %}">Open Offline Library</a>
+    </div>
+  </section>
+
+  <section class="card stack">
+    <h2>Demo Snapshot</h2>
+    <div class="mini-grid two-up">
+      <div class="soft-card">
+        <p class="kicker">Show This To Mentors</p>
+        <p>Use this dashboard after answering a practice question to demonstrate that EduAccess keeps learner progress beyond a single chat message.</p>
+      </div>
+      <div class="soft-card">
+        <p class="kicker">Suggested Next Click</p>
+        <p>Open the study assistant, answer one Maths or English practice question, then return here to show updated performance.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="stats-grid">
+    <article class="card">
+      <p class="subject-label">Overall Score</p>
+      <div class="stat-value">{{ summary.overall_score|cut:"Score: " }}</div>
+      <p>Total answered practice questions: {{ summary.total_attempts }}</p>
+    </article>
+
+    <article class="card">
+      <p class="subject-label">Current Practice State</p>
+      {% if summary.pending_question %}
+        <div class="stat-value">{{ summary.pending_subject|default:"Active" }}</div>
+        <p>Pending question: {{ summary.pending_question }}</p>
+      {% else %}
+        <div class="stat-value">No pending task</div>
+        <p>The student is ready for a new practice question.</p>
+      {% endif %}
+    </article>
+  </section>
+
+  <section class="subject-grid">
+    {% for subject in summary.subjects %}
+      <article class="card subject-card">
+        <p class="subject-label">{{ subject.name }}</p>
+        <div class="subject-score">{{ subject.correct }}/{{ subject.attempts }}</div>
+        <p>{{ subject.progress_text }}</p>
+      </article>
+    {% endfor %}
+  </section>
+{% endblock %}

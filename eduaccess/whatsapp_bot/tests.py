@@ -1,253 +1,588 @@
-import zipfile
-from io import BytesIO
 from unittest.mock import patch
 
+from django.contrib.auth.models import User
 from django.test import TestCase
 
-from .ai import generate_question
-from .models import TopicProgress, UserProgress
+
+class PwaTests(TestCase):
+    def test_manifest_is_available(self):
+        response = self.client.get("/manifest.json")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/json")
+        self.assertContains(response, "EduAccess Offline Library")
+        self.assertContains(response, "/offline-library/")
+        self.assertContains(response, "icon-192.png")
+        self.assertContains(response, "icon-512.png")
+
+    def test_service_worker_is_available(self):
+        response = self.client.get("/service-worker.js")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("application/javascript", response["Content-Type"])
+        self.assertIn("CACHE_NAME", response.content.decode())
+        self.assertEqual(response["Service-Worker-Allowed"], "/")
+
+    def test_offline_library_page_renders_pack_links(self):
+        response = self.client.get("/offline-library/")
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/login/", response["Location"])
+
+    def test_offline_library_page_renders_pack_links_for_logged_in_user(self):
+        User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+        response = self.client.get("/offline-library/")
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("EduAccess Offline Library", body)
+        self.assertIn('href="/manifest.json"', body)
+        self.assertIn("Install EduAccess", body)
+        self.assertIn('id="install-status"', body)
+        self.assertIn("/study-assistant/", body)
+        self.assertIn("/packs/maths-algebra-basics/", body)
+        self.assertIn("/audio-packs/audio-maths-algebra-basics/player/", body)
+
+    def test_study_assistant_page_renders(self):
+        response = self.client.get("/study-assistant/")
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/login/", response["Location"])
+
+    def test_register_page_creates_user_and_logs_them_in(self):
+        response = self.client.post(
+            "/register/",
+            {
+                "username": "student1",
+                "email": "student1@example.com",
+                "password1": "StrongPass123",
+                "password2": "StrongPass123",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], "/study-assistant/")
+        self.assertTrue(User.objects.filter(username="student1").exists())
+
+    def test_login_page_renders(self):
+        response = self.client.get("/login/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Welcome back", response.content.decode())
+
+    def test_dashboard_requires_login(self):
+        response = self.client.get("/dashboard/")
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/login/", response["Location"])
+
+    def test_dashboard_shows_logged_in_student_progress(self):
+        user = User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+        progress = user.learning_progress
+        progress.correct_answers = 2
+        progress.total_attempts = 3
+        progress.last_question = (
+            '{"pending": {"subject": "maths", "question": "Solve for x: x + 9 = 14", "answer": "x = 5"}, '
+            '"subject_stats": {"maths": {"attempts": 2, "correct": 1}, "english": {"attempts": 1, "correct": 1}}, '
+            '"recent_questions": {}}'
+        )
+        progress.save()
+
+        response = self.client.get("/dashboard/")
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("student1&#x27;s learning overview", body)
+        self.assertIn("Overall Score", body)
+        self.assertIn("2/3", body)
+        self.assertIn("Solve for x: x + 9 = 14", body)
+        self.assertIn("Maths", body)
+        self.assertIn("English", body)
+
+    @patch("whatsapp_bot.views.generate_question")
+    def test_study_assistant_page_handles_practice_english_command(self, mock_generate_question):
+        User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+        mock_generate_question.return_value = (
+            "Write this sentence in the passive voice: The chef cooked the meal.",
+            "The meal was cooked by the chef.",
+        )
+
+        response = self.client.post(
+            "/study-assistant/",
+            {"question": "Practice english"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("English Practice Question", body)
+        self.assertIn("Reply with your answer and I will mark it", body)
+        mock_generate_question.assert_called_once_with(subject="english", exclude_questions=[], topic=None)
+
+    @patch("whatsapp_bot.views.generate_question")
+    def test_study_assistant_marks_practice_answer_and_updates_progress(self, mock_generate_question):
+        User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+        mock_generate_question.return_value = (
+            "Write this sentence in the passive voice: The chef cooked the meal.",
+            "The meal was cooked by the chef.",
+        )
+
+        self.client.post("/study-assistant/", {"question": "Practice english"})
+        response = self.client.post(
+            "/study-assistant/",
+            {"question": "The meal was cooked by the chef."},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("English Practice Feedback", body)
+        self.assertIn("Correct. Well done.", body)
+        self.assertIn("Score: 1/1", body)
+        self.assertIn("Progress: English grammar practice has started.", body)
+        self.assertIn("Covered area focus: sentence structure, grammar, vocabulary, and expression.", body)
+
+    @patch("whatsapp_bot.views.generate_question")
+    def test_study_assistant_feedback_uses_subject_score_not_overall_score(self, mock_generate_question):
+        User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+        mock_generate_question.side_effect = [
+            ("Change to passive voice: The chef cooked the meal.", "The meal was cooked by the chef."),
+            ("Solve for x: x + 9 = 14", "x = 5"),
+            ("Solve for y: 3y = 18", "y = 6"),
+        ]
+
+        self.client.post("/study-assistant/", {"question": "Practice english"})
+        self.client.post("/study-assistant/", {"question": "The meal was cooked by the chef."})
+        self.client.post("/study-assistant/", {"question": "Practice maths"})
+        self.client.post("/study-assistant/", {"question": "x = 3"})
+        self.client.post("/study-assistant/", {"question": "Practice maths"})
+        response = self.client.post("/study-assistant/", {"question": "y = 6"})
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("Maths Practice Feedback", body)
+        self.assertIn("Score: 1/2", body)
+        self.assertNotIn("Score: 2/3", body)
+
+    @patch("whatsapp_bot.views.generate_question")
+    def test_study_assistant_avoids_immediate_repeat_for_same_subject(self, mock_generate_question):
+        User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+        mock_generate_question.side_effect = [
+            ("Change to passive voice: The chef cooked the meal.", "The meal was cooked by the chef."),
+            ("Change to passive voice: The students solved the problem.", "The problem was solved by the students."),
+        ]
+
+        self.client.post("/study-assistant/", {"question": "Practice english"})
+        response = self.client.post("/study-assistant/", {"question": "Practice english"})
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("The students solved the problem.", body)
+        self.assertEqual(mock_generate_question.call_args_list[0].kwargs, {"subject": "english", "exclude_questions": [], "topic": None})
+        self.assertEqual(
+            mock_generate_question.call_args_list[1].kwargs,
+            {"subject": "english", "exclude_questions": ["Change to passive voice: The chef cooked the meal."], "topic": None},
+        )
+
+    @patch("whatsapp_bot.views.generate_question")
+    def test_study_assistant_progress_command_shows_running_score(self, mock_generate_question):
+        User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+        mock_generate_question.return_value = (
+            "Solve: 2x = 10",
+            "x = 5",
+        )
+
+        self.client.post("/study-assistant/", {"question": "Practice maths"})
+        self.client.post("/study-assistant/", {"question": "x = 5"})
+        response = self.client.post("/study-assistant/", {"question": "progress"})
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("Score: 1/1", body)
+        self.assertIn("Progress: Learning progress is building.", body)
+
+    @patch("whatsapp_bot.views.generate_question")
+    def test_study_assistant_supports_specific_english_topic_choice(self, mock_generate_question):
+        User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+        mock_generate_question.return_value = (
+            "Read the sentence and identify the adjective: The tall tree fell.",
+            "tall",
+        )
+
+        response = self.client.post("/study-assistant/", {"question": "practice english adjectives"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("English Practice Question", response.content.decode())
+        mock_generate_question.assert_called_once_with(subject="english", exclude_questions=[], topic="adjectives")
+
+    @patch("whatsapp_bot.views.ask_ai")
+    @patch("whatsapp_bot.views.generate_question")
+    def test_new_learning_request_does_not_get_graded_as_pending_practice_answer(
+        self,
+        mock_generate_question,
+        mock_ask_ai,
+    ):
+        User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+        mock_generate_question.return_value = (
+            "Differentiate with respect to x: x^2",
+            "2x",
+        )
+        mock_ask_ai.return_value = "Linear equations are equations whose highest power is 1."
+
+        self.client.post("/study-assistant/", {"question": "practice maths calculus"})
+        response = self.client.post("/study-assistant/", {"question": "Teach me linear equations"})
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("Linear equations are equations whose highest power is 1.", body)
+        self.assertNotIn("Maths Practice Feedback", body)
+
+    def test_generate_question_uses_local_reported_speech_bank(self):
+        from whatsapp_bot.ai import generate_question
+
+        question, answer = generate_question(subject="english", topic="reported speech")
+
+        self.assertIn("reported speech", question.lower())
+        self.assertTrue(answer)
+
+    def test_generate_question_accepts_singular_topic_alias(self):
+        from whatsapp_bot.ai import generate_question
+
+        question, answer = generate_question(subject="maths", topic="linear equation")
+
+        self.assertTrue(question)
+        self.assertTrue(answer)
+
+    @patch("whatsapp_bot.views.get_or_generate_audio_pack")
+    @patch("whatsapp_bot.views.get_or_generate_learning_pack")
+    @patch("whatsapp_bot.views.generate_question")
+    def test_specific_topic_practice_adds_related_download_links(
+        self,
+        mock_generate_question,
+        mock_get_or_generate_learning_pack,
+        mock_get_or_generate_audio_pack,
+    ):
+        User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+        mock_generate_question.return_value = (
+            "Change to passive voice: The chef cooked the meal.",
+            "The meal was cooked by the chef.",
+        )
+        mock_get_or_generate_learning_pack.return_value = {
+            "slug": "passive-voice",
+            "subject": "english",
+            "topic": "Passive Voice",
+            "title": "Passive Voice Pack",
+            "summary": "Detailed pack",
+            "content": "CONTENT",
+        }
+        mock_get_or_generate_audio_pack.return_value = {
+            "slug": "audio-passive-voice",
+            "subject": "english",
+            "topic": "Passive Voice",
+            "title": "Passive Voice Audio Lesson",
+            "summary": "Detailed audio",
+            "transcript": "TRANSCRIPT",
+        }
+
+        response = self.client.post(
+            "/study-assistant/",
+            {"question": "practice english passive voice"},
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("/packs/passive-voice/", body)
+        self.assertIn("/audio-packs/audio-passive-voice/player/", body)
+        self.assertIn("/audio-packs/audio-passive-voice/transcript/", body)
+
+    @patch("whatsapp_bot.views.generate_learning_pack")
+    def test_study_assistant_page_handles_pack_command(self, mock_generate_learning_pack):
+        User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+        mock_generate_learning_pack.return_value = {
+            "slug": "algebra",
+            "subject": "maths",
+            "topic": "Algebra",
+            "title": "Algebra Pack",
+            "summary": "Rich algebra revision content.",
+            "content": "ALGEBRA CONTENT",
+        }
+        response = self.client.post(
+            "/study-assistant/",
+            {"question": "pack algebra"},
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("Algebra Pack", body)
+        self.assertIn("/packs/algebra/", body)
+        self.assertIn('href="http://127.0.0.1/packs/algebra/"', body)
+        mock_generate_learning_pack.assert_called_once_with("algebra")
+
+    @patch("whatsapp_bot.views.ask_ai")
+    def test_study_assistant_page_uses_ai_for_normal_question(self, mock_ask_ai):
+        User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+        mock_ask_ai.return_value = "Algebra uses letters to represent unknown values."
+
+        response = self.client.post(
+            "/study-assistant/",
+            {"question": "Explain algebra"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Algebra uses letters to represent unknown values.", response.content.decode())
+        mock_ask_ai.assert_called_once_with("Explain algebra")
+
+    @patch("whatsapp_bot.views.get_or_generate_audio_pack")
+    @patch("whatsapp_bot.views.get_or_generate_learning_pack")
+    @patch("whatsapp_bot.views.ask_ai")
+    def test_topic_based_normal_question_adds_resource_links(
+        self,
+        mock_ask_ai,
+        mock_get_or_generate_learning_pack,
+        mock_get_or_generate_audio_pack,
+    ):
+        User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+        mock_ask_ai.return_value = "Linear equations help us solve for unknown values."
+        mock_get_or_generate_learning_pack.return_value = {
+            "slug": "linear-equations",
+            "subject": "maths",
+            "topic": "Linear Equations",
+            "title": "Linear Equations Pack",
+            "summary": "Detailed pack",
+            "content": "CONTENT",
+        }
+        mock_get_or_generate_audio_pack.return_value = {
+            "slug": "audio-linear-equations",
+            "subject": "maths",
+            "topic": "Linear Equations",
+            "title": "Linear Equations Audio Lesson",
+            "summary": "Detailed audio",
+            "transcript": "TRANSCRIPT",
+        }
+
+        response = self.client.post(
+            "/study-assistant/",
+            {"question": "Teach me linear equations"},
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("Linear equations help us solve for unknown values.", body)
+        self.assertIn("/packs/linear-equations/", body)
+        self.assertIn("/audio-packs/audio-linear-equations/player/", body)
+        self.assertIn("/audio-packs/audio-linear-equations/transcript/", body)
+
+    @patch("whatsapp_bot.views.get_or_generate_audio_pack")
+    @patch("whatsapp_bot.views.get_or_generate_learning_pack")
+    @patch("whatsapp_bot.views.ask_ai")
+    def test_topic_based_normal_question_uses_topic_fallback_when_ai_fails(
+        self,
+        mock_ask_ai,
+        mock_get_or_generate_learning_pack,
+        mock_get_or_generate_audio_pack,
+    ):
+        User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+        mock_ask_ai.side_effect = RuntimeError("AI unavailable")
+        mock_get_or_generate_learning_pack.return_value = {
+            "slug": "linear-equations",
+            "subject": "maths",
+            "topic": "Linear Equations",
+            "title": "Linear Equations Pack",
+            "summary": "Detailed pack",
+            "content": "CONTENT",
+        }
+        mock_get_or_generate_audio_pack.return_value = {
+            "slug": "audio-linear-equations",
+            "subject": "maths",
+            "topic": "Linear Equations",
+            "title": "Linear Equations Audio Lesson",
+            "summary": "Detailed audio",
+            "transcript": "TRANSCRIPT",
+        }
+
+        response = self.client.post(
+            "/study-assistant/",
+            {"question": "Teach me linear equations"},
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("Linear Equations", body)
+        self.assertIn("Study Pack:", body)
+        self.assertIn("/packs/linear-equations/", body)
+
+    @patch("whatsapp_bot.views.get_or_generate_audio_pack")
+    @patch("whatsapp_bot.views.get_or_generate_learning_pack")
+    def test_offline_library_shows_recent_topic_from_normal_chat(
+        self,
+        mock_get_or_generate_learning_pack,
+        mock_get_or_generate_audio_pack,
+    ):
+        User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+        mock_get_or_generate_learning_pack.return_value = {
+            "slug": "linear-equations",
+            "subject": "maths",
+            "topic": "Linear Equations",
+            "title": "Linear Equations Pack",
+            "summary": "Detailed pack",
+            "content": "CONTENT",
+        }
+        mock_get_or_generate_audio_pack.return_value = {
+            "slug": "audio-linear-equations",
+            "subject": "maths",
+            "topic": "Linear Equations",
+            "title": "Linear Equations Audio Lesson",
+            "summary": "Detailed audio",
+            "transcript": "TRANSCRIPT",
+        }
+
+        session = self.client.session
+        session["study_assistant_history"] = [
+            {"role": "student", "text": "Teach me linear equations"},
+            {"role": "assistant", "text": "Linear equations help us solve for unknown values."},
+        ]
+        session.save()
+
+        user = User.objects.get(username="student1")
+        progress = user.learning_progress
+        progress.last_question = (
+            '{"pending": null, "subject_stats": {}, "recent_questions": {}, '
+            '"recent_topics": [{"topic": "linear equations", "subject": "maths", "normalized": "linear equations"}]}'
+        )
+        progress.save()
+
+        response = self.client.get("/offline-library/")
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("Linear Equations", body)
+        self.assertIn("Recent Topic", body)
+        self.assertIn("/packs/linear-equations/", body)
+
+    def test_offline_library_shows_recent_adjectives_topic(self):
+        user = User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+
+        progress = user.learning_progress
+        progress.last_question = (
+            '{"pending": null, "subject_stats": {}, "recent_questions": {}, '
+            '"recent_topics": [{"topic": "adjectives", "subject": "english", "normalized": "adjectives"}]}'
+        )
+        progress.save()
+
+        response = self.client.get("/offline-library/")
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("Adjectives", body)
+        self.assertIn("/packs/adjectives/", body)
+        self.assertIn("/audio-packs/audio-adjectives/player/", body)
+
+    @patch("whatsapp_bot.views.generate_audio_pack")
+    def test_study_assistant_api_returns_audio_pack_reply(self, mock_generate_audio_pack):
+        User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+        mock_generate_audio_pack.return_value = {
+            "slug": "audio-passive-voice",
+            "subject": "english",
+            "topic": "Passive Voice",
+            "title": "Passive Voice Audio Lesson",
+            "summary": "Detailed audio lesson.",
+            "transcript": "TRANSCRIPT",
+        }
+        response = self.client.post(
+            "/study-assistant/api/",
+            data='{"question": "audio pack passive voice"}',
+            content_type="application/json",
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Passive Voice Audio Lesson", response.json()["reply"])
+        self.assertIn("/audio-packs/audio-passive-voice/player/", response.json()["reply"])
+        mock_generate_audio_pack.assert_called_once_with("passive voice")
+
+    def test_offline_fallback_page_renders(self):
+        response = self.client.get("/offline-fallback/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "You are offline")
+
+    def test_study_assistant_routes_to_offline_library_for_library_command(self):
+        User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+
+        response = self.client.post("/study-assistant/", {"question": "offline library"})
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], "/offline-library/")
+
+    def test_learning_pack_download_returns_text(self):
+        User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+        response = self.client.get("/packs/english-passive-voice/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("attachment;", response["Content-Disposition"])
+        self.assertIn("PASSIVE VOICE", response.content.decode())
+        self.assertIn("LEARNING GOALS", response.content.decode())
+        self.assertIn("TENSE GUIDE", response.content.decode())
+        self.assertIn("EXAM-STYLE PRACTICE", response.content.decode())
+
+    def test_algebra_pack_download_contains_fuller_lesson_content(self):
+        User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+        response = self.client.get("/packs/maths-algebra-basics/")
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("ALGEBRA BASICS STUDY PACK", body)
+        self.assertIn("WHY ALGEBRA MATTERS", body)
+        self.assertIn("WORKED EXAMPLE 4", body)
+        self.assertIn("COMMON MISTAKES", body)
+        self.assertIn("EXAM-STYLE PRACTICE", body)
+        self.assertIn("SELF-ASSESSMENT", body)
+
+    def test_audio_player_page_contains_speech_synthesis(self):
+        User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+        response = self.client.get("/audio-packs/audio-english-passive-voice/player/")
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("Play Audio Lesson", body)
+        self.assertIn("speechSynthesis", body)
+
+    def test_audio_transcript_download_returns_text(self):
+        User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+        response = self.client.get("/audio-packs/audio-english-passive-voice/transcript/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("attachment;", response["Content-Disposition"])
+        self.assertIn("In the future tense, we can say the results will be announced", response.content.decode())
 
 
 class WhatsAppWebhookTests(TestCase):
-    @patch("whatsapp_bot.views.generate_question")
-    def test_practice_starts_and_tracks_question(self, mock_generate_question):
-        mock_generate_question.return_value = ("What is 2 + 2?", "4", "Maths")
-
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "practice", "From": "whatsapp:+111111111"},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("Practice question", response.content.decode())
-
-        progress = UserProgress.objects.get(phone_number="whatsapp:+111111111")
-        self.assertTrue(progress.awaiting_practice_answer)
-        self.assertEqual(progress.last_question, "What is 2 + 2?")
-        self.assertEqual(progress.last_answer, "4")
-        self.assertEqual(progress.last_topic, "Maths")
-
-    @patch("whatsapp_bot.views.generate_question")
-    def test_practice_answer_is_graded_and_score_saved(self, mock_generate_question):
-        mock_generate_question.return_value = ("What is 2 + 2?", "4", "Maths")
-
-        self.client.post(
-            "/whatsapp/",
-            {"Body": "practice", "From": "whatsapp:+222222222"},
-            HTTP_HOST="127.0.0.1",
-        )
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "4", "From": "whatsapp:+222222222"},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        body = response.content.decode()
-        self.assertIn("Correct! Well done.", body)
-        self.assertIn("Session score: 1/1.", body)
-        self.assertIn("Overall progress: 1/1.", body)
-
-        progress = UserProgress.objects.get(phone_number="whatsapp:+222222222")
-        self.assertFalse(progress.awaiting_practice_answer)
-        self.assertEqual(progress.correct_answers, 1)
-        self.assertEqual(progress.total_attempts, 1)
-        self.assertEqual(progress.session_correct_answers, 1)
-        self.assertEqual(progress.session_total_attempts, 1)
-
-    @patch("whatsapp_bot.views.generate_question")
-    def test_maths_fraction_answer_accepts_decimal_equivalent(self, mock_generate_question):
-        mock_generate_question.return_value = ("What is 1/2 + 1/4?", "3/4", "Fractions")
-
-        self.client.post(
-            "/whatsapp/",
-            {"Body": "practice maths", "From": "whatsapp:+212121212"},
-            HTTP_HOST="127.0.0.1",
-        )
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "0.75", "From": "whatsapp:+212121212"},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertIn("Correct! Well done.", response.content.decode())
-
-    @patch("whatsapp_bot.views.generate_question")
-    def test_maths_equation_answer_accepts_variable_form(self, mock_generate_question):
-        mock_generate_question.return_value = ("Solve for x: 3x = 18", "6", "Algebra")
-
-        self.client.post(
-            "/whatsapp/",
-            {"Body": "practice maths", "From": "whatsapp:+313131313"},
-            HTTP_HOST="127.0.0.1",
-        )
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "x = 6", "From": "whatsapp:+313131313"},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertIn("Correct! Well done.", response.content.decode())
-
-    @patch("whatsapp_bot.views.generate_question")
-    def test_maths_percent_answer_accepts_decimal_equivalent(self, mock_generate_question):
-        mock_generate_question.return_value = ("Write 25% as a decimal.", "0.25", "Percentages")
-
-        self.client.post(
-            "/whatsapp/",
-            {"Body": "practice maths", "From": "whatsapp:+414141414"},
-            HTTP_HOST="127.0.0.1",
-        )
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "25%", "From": "whatsapp:+414141414"},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertIn("Correct! Well done.", response.content.decode())
-
-    @patch("whatsapp_bot.views.generate_question")
-    def test_practice_shows_lesson_progress(self, mock_generate_question):
-        mock_generate_question.return_value = ("Solve for x: x + 7 = 15", "8", "Algebra")
-
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "practice maths", "From": "whatsapp:+515151515"},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertIn("Lesson 1/3.", response.content.decode())
-
-    @patch("whatsapp_bot.views.generate_question")
-    def test_plain_practice_continues_same_lesson_topic(self, mock_generate_question):
-        mock_generate_question.side_effect = [
-            ("Solve for x: x + 7 = 15", "8", "Algebra"),
-            ("Solve for x: x + 9 = 14", "5", "Algebra"),
-        ]
-
-        phone_number = "whatsapp:+616161616"
-        self.client.post(
-            "/whatsapp/",
-            {"Body": "practice maths", "From": phone_number},
-            HTTP_HOST="127.0.0.1",
-        )
-        self.client.post(
-            "/whatsapp/",
-            {"Body": "8", "From": phone_number},
-            HTTP_HOST="127.0.0.1",
-        )
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "practice", "From": phone_number},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        body = response.content.decode()
-        self.assertIn("Practice question (Algebra", body)
-        self.assertIn("Lesson 2/3.", body)
-
-    @patch("whatsapp_bot.views.generate_question")
-    def test_lesson_completes_and_recommends_next_topic(self, mock_generate_question):
-        mock_generate_question.side_effect = [
-            ("Solve for x: x + 7 = 15", "8", "Algebra"),
-            ("Solve for x: x + 9 = 14", "5", "Algebra"),
-            ("Solve for x: x + 4 = 10", "6", "Algebra"),
-        ]
-
-        phone_number = "whatsapp:+717171717"
-        self.client.post(
-            "/whatsapp/",
-            {"Body": "practice maths", "From": phone_number},
-            HTTP_HOST="127.0.0.1",
-        )
-        self.client.post(
-            "/whatsapp/",
-            {"Body": "8", "From": phone_number},
-            HTTP_HOST="127.0.0.1",
-        )
-        self.client.post(
-            "/whatsapp/",
-            {"Body": "practice", "From": phone_number},
-            HTTP_HOST="127.0.0.1",
-        )
-        self.client.post(
-            "/whatsapp/",
-            {"Body": "5", "From": phone_number},
-            HTTP_HOST="127.0.0.1",
-        )
-        self.client.post(
-            "/whatsapp/",
-            {"Body": "practice", "From": phone_number},
-            HTTP_HOST="127.0.0.1",
-        )
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "6", "From": phone_number},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        body = response.content.decode()
-        self.assertIn("Lesson complete: Algebra.", body)
-        self.assertIn("Next topic:", body)
-
-    @patch("whatsapp_bot.views.generate_question")
-    def test_practice_subject_can_be_requested(self, mock_generate_question):
-        mock_generate_question.return_value = ("Choose the correct verb.", "is", "English")
-
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "practice english", "From": "whatsapp:+444444444"},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("Practice question (English, foundation)", response.content.decode())
-        mock_generate_question.assert_called_once_with(
-            subject="english",
-            topic="Articles",
-            difficulty="foundation",
-        )
-
-    @patch("whatsapp_bot.views.generate_question")
-    def test_english_practice_uses_requested_subject(self, mock_generate_question):
-        mock_generate_question.return_value = (
-            "Choose the correct word: She ___ to school yesterday. A. go B. went C. going",
-            "B|went",
-            "Verb tense",
-        )
-
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "practice english", "From": "whatsapp:+888888888"},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        body = response.content.decode()
-        self.assertIn("Verb tense", body)
-        self.assertIn("She ___ to school yesterday", body)
-
-    @patch("whatsapp_bot.views.generate_question")
-    def test_practice_difficulty_can_be_requested(self, mock_generate_question):
-        mock_generate_question.return_value = ("Solve 12 x 8.", "96", "Multiplication")
-
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "practice maths stretch", "From": "whatsapp:+555555555"},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("stretch", response.content.decode().lower())
-        mock_generate_question.assert_called_once_with(
-            subject="maths",
-            topic="Integers",
-            difficulty="stretch",
-        )
-
     @patch("whatsapp_bot.views.ask_ai")
-    def test_normal_message_uses_ai_when_not_in_practice_mode(self, mock_ask_ai):
+    def test_normal_message_uses_ai(self, mock_ask_ai):
         mock_ask_ai.return_value = "Derivative means rate of change."
 
         response = self.client.post(
@@ -258,505 +593,57 @@ class WhatsAppWebhookTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("Derivative means rate of change.", response.content.decode())
-        mock_ask_ai.assert_called_once_with("What is a derivative?", low_data=True)
+        mock_ask_ai.assert_called_once_with("What is a derivative?")
 
-    def test_low_data_mode_can_be_turned_off(self):
-        phone_number = "whatsapp:+818181818"
+    def test_offline_library_command_returns_link(self):
         response = self.client.post(
             "/whatsapp/",
-            {"Body": "lite off", "From": phone_number},
+            {"Body": "offline library", "From": "whatsapp:+111111111"},
             HTTP_HOST="127.0.0.1",
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn("Data saver is off.", response.content.decode())
-
-        progress = UserProgress.objects.get(phone_number=phone_number)
-        self.assertFalse(progress.low_data_mode)
-
-    def test_offline_mode_can_be_turned_on(self):
-        phone_number = "whatsapp:+161111111"
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "offline on", "From": phone_number},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("Offline mode is on.", response.content.decode())
-
-        progress = UserProgress.objects.get(phone_number=phone_number)
-        self.assertTrue(progress.offline_mode)
-
-    def test_offline_status_reports_current_mode(self):
-        phone_number = "whatsapp:+171111111"
-        self.client.post(
-            "/whatsapp/",
-            {"Body": "offline on", "From": phone_number},
-            HTTP_HOST="127.0.0.1",
-        )
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "offline status", "From": phone_number},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("Offline mode is on.", response.content.decode())
-
-    def test_learning_packs_can_be_listed(self):
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "packs", "From": "whatsapp:+121111111"},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        body = response.content.decode().lower()
-        self.assertIn("available packs", body)
-        self.assertIn("algebra", body)
-
-    def test_learning_pack_can_be_requested_by_topic(self):
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "pack passive voice", "From": "whatsapp:+131111111"},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        body = response.content.decode().lower()
-        self.assertIn("passive voice pack", body)
-        self.assertIn("/packs/english-passive-voice/", body)
-        self.assertIn("/offline-packs/english-passive-voice/", body)
-
-    def test_learning_pack_download_endpoint_returns_text_file(self):
-        response = self.client.get(
-            "/packs/english-passive-voice/",
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("attachment;", response["Content-Disposition"])
-        self.assertIn("PASSIVE VOICE", response.content.decode())
-
-    def test_audio_packs_can_be_listed(self):
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "audio packs", "From": "whatsapp:+141111111"},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        body = response.content.decode().lower()
-        self.assertIn("audio packs", body)
-        self.assertIn("algebra", body)
-
-    def test_audio_pack_can_be_requested_by_topic(self):
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "audio pack passive voice", "From": "whatsapp:+151111111"},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        body = response.content.decode().lower()
-        self.assertIn("passive voice audio pack", body)
-        self.assertIn("/audio-packs/audio-english-passive-voice/player/", body)
-        self.assertIn("/audio-packs/audio-english-passive-voice/transcript/", body)
-        self.assertIn("/offline-packs/english-passive-voice/", body)
-
-    def test_audio_pack_transcript_download_endpoint_returns_text_file(self):
-        response = self.client.get(
-            "/audio-packs/audio-english-passive-voice/transcript/",
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("attachment;", response["Content-Disposition"])
-        self.assertIn("Passive voice focuses on the receiver", response.content.decode())
-
-    def test_audio_pack_player_endpoint_returns_html_page(self):
-        response = self.client.get(
-            "/audio-packs/audio-english-passive-voice/player/",
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("text/html", response["Content-Type"])
-        self.assertIn("Play Audio Lesson", response.content.decode())
-        self.assertIn("speechSynthesis", response.content.decode())
-
-    def test_offline_bundles_can_be_listed(self):
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "offline packs", "From": "whatsapp:+161616161"},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        body = response.content.decode().lower()
-        self.assertIn("offline study bundles", body)
-        self.assertIn("offline pack algebra", body)
-
-    def test_offline_library_command_returns_library_link(self):
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "offline library", "From": "whatsapp:+161600000"},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        body = response.content.decode().lower()
-        self.assertIn("offline library is ready", body)
-        self.assertIn("/offline-library/", body)
-
-    def test_offline_all_command_returns_archive_link(self):
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "offline all", "From": "whatsapp:+161600001"},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        body = response.content.decode().lower()
-        self.assertIn("full offline archive is ready", body)
-        self.assertIn("/offline-library/download/", body)
-
-    def test_offline_bundle_can_be_requested_by_topic(self):
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "offline pack passive voice", "From": "whatsapp:+171717171"},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        body = response.content.decode().lower()
-        self.assertIn("offline bundle ready", body)
-        self.assertIn("/offline-packs/english-passive-voice/", body)
-
-    def test_offline_bundle_download_endpoint_returns_zip_bundle(self):
-        response = self.client.get(
-            "/offline-packs/english-passive-voice/",
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response["Content-Type"], "application/zip")
-        self.assertIn("offline-bundle.zip", response["Content-Disposition"])
-
-        with zipfile.ZipFile(BytesIO(response.content)) as bundle_zip:
-            names = set(bundle_zip.namelist())
-            self.assertIn("README.txt", names)
-            self.assertIn("lesson.txt", names)
-            self.assertIn("audio-transcript.txt", names)
-            self.assertIn("audio-player.html", names)
-            self.assertIn("PASSIVE VOICE", bundle_zip.read("lesson.txt").decode())
-            self.assertIn("speechSynthesis", bundle_zip.read("audio-player.html").decode())
-
-    def test_offline_library_page_lists_downloadable_entries(self):
-        response = self.client.get(
-            "/offline-library/",
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        body = response.content.decode().lower()
-        self.assertIn("eduaccess offline library", body)
-        self.assertIn("/offline-library/download/", body)
-        self.assertIn("/offline-packs/maths-algebra-basics/", body)
-        self.assertIn("/audio-packs/audio-maths-algebra-basics/player/", body)
-
-    def test_offline_library_download_returns_zip_of_bundle_zips(self):
-        response = self.client.get(
-            "/offline-library/download/",
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response["Content-Type"], "application/zip")
-        self.assertIn("eduaccess-offline-library.zip", response["Content-Disposition"])
-
-        with zipfile.ZipFile(BytesIO(response.content)) as archive_zip:
-            names = set(archive_zip.namelist())
-            self.assertIn("README.txt", names)
-            self.assertIn("maths-algebra-basics.zip", names)
-            nested_bundle = archive_zip.read("maths-algebra-basics.zip")
-            with zipfile.ZipFile(BytesIO(nested_bundle)) as bundle_zip:
-                self.assertIn("lesson.txt", bundle_zip.namelist())
-
-    @patch("whatsapp_bot.views.ask_ai")
-    def test_offline_mode_uses_local_pack_reply_for_topic_question(self, mock_ask_ai):
-        phone_number = "whatsapp:+181111111"
-        self.client.post(
-            "/whatsapp/",
-            {"Body": "offline on", "From": phone_number},
-            HTTP_HOST="127.0.0.1",
-        )
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "Teach me passive voice", "From": phone_number},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        body = response.content.decode().lower()
-        self.assertIn("passive voice pack", body)
-        self.assertIn("/packs/english-passive-voice/", body)
-        mock_ask_ai.assert_not_called()
-
-    @patch("whatsapp_bot.views.ask_ai")
-    def test_ai_uses_full_mode_when_low_data_is_off(self, mock_ask_ai):
-        mock_ask_ai.return_value = "Longer explanation."
-        phone_number = "whatsapp:+919191919"
-        self.client.post(
-            "/whatsapp/",
-            {"Body": "lite off", "From": phone_number},
-            HTTP_HOST="127.0.0.1",
-        )
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "Explain photosynthesis", "From": phone_number},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("Longer explanation.", response.content.decode())
-        mock_ask_ai.assert_called_once_with("Explain photosynthesis", low_data=False)
-
-    @patch("whatsapp_bot.views.ask_ai")
-    @patch("whatsapp_bot.views.generate_question")
-    def test_general_question_exits_practice_mode_and_uses_ai(
-        self,
-        mock_generate_question,
-        mock_ask_ai,
-    ):
-        mock_generate_question.return_value = ("What is 2 + 2?", "4", "Addition")
-        mock_ask_ai.return_value = "Photosynthesis is how plants make food."
-
-        phone_number = "whatsapp:+232323232"
-        self.client.post(
-            "/whatsapp/",
-            {"Body": "practice maths", "From": phone_number},
-            HTTP_HOST="127.0.0.1",
-        )
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "What is photosynthesis?", "From": phone_number},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("Photosynthesis is how plants make food.", response.content.decode())
-
-        progress = UserProgress.objects.get(phone_number=phone_number)
-        self.assertFalse(progress.awaiting_practice_answer)
-
-
-class PracticeBankTests(TestCase):
-    def test_secondary_school_maths_question_comes_from_local_bank(self):
-        question, answer, topic = generate_question(subject="maths", difficulty="core")
-        self.assertTrue(question)
-        self.assertTrue(answer)
-        self.assertIn(
-            topic,
-            {"Linear equations", "Simultaneous equations", "Geometry", "Statistics"},
-        )
-
-    def test_secondary_school_english_question_comes_from_local_bank(self):
-        question, answer, topic = generate_question(subject="english", difficulty="core")
-        self.assertTrue(question)
-        self.assertTrue(answer)
-        self.assertIn(
-            topic,
-            {"Reported speech", "Parts of speech", "Sentence correction", "Comprehension"},
-        )
-
-    def test_english_grammar_topic_can_be_requested(self):
-        question, answer, topic = generate_question(subject="english", difficulty="foundation", topic="grammar")
-        self.assertTrue(question)
-        self.assertTrue(answer)
-        self.assertIn(
-            topic,
-            {"Subject-verb agreement", "Articles"},
-        )
-
-    def test_english_reported_speech_topic_can_be_requested(self):
-        question, answer, topic = generate_question(subject="english", difficulty="core", topic="reported speech")
-        self.assertEqual(topic, "Reported speech")
-        self.assertIn("reported speech", question.lower())
-
-    def test_english_passive_voice_topic_can_be_requested_across_difficulties(self):
-        question, answer, topic = generate_question(subject="english", difficulty="foundation", topic="passive voice")
-        self.assertEqual(topic, "Passive voice")
-        self.assertIn("passive voice", question.lower())
+        self.assertIn("/offline-library/", response.content.decode())
 
     @patch("whatsapp_bot.views.generate_question")
-    def test_wrong_answer_creates_topic_progress_and_remediation(self, mock_generate_question):
-        mock_generate_question.side_effect = [
-            ("What is 5 + 5?", "10", "Addition"),
-            ("What is 2 + 3?", "5", "Addition"),
-        ]
-
-        self.client.post(
-            "/whatsapp/",
-            {"Body": "practice maths core", "From": "whatsapp:+666666666"},
-            HTTP_HOST="127.0.0.1",
-        )
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "8", "From": "whatsapp:+666666666"},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        body = response.content.decode()
-        self.assertIn("Not quite. The correct answer is: 10", body)
-        self.assertIn("Quick retry on Addition", body)
-        self.assertIn("Session score: 0/1.", body)
-
-        progress = UserProgress.objects.get(phone_number="whatsapp:+666666666")
-        self.assertTrue(progress.awaiting_practice_answer)
-        self.assertTrue(progress.awaiting_remediation)
-        self.assertEqual(progress.total_attempts, 1)
-
-        topic_progress = TopicProgress.objects.get(user=progress, subject="maths", topic="Addition")
-        self.assertEqual(topic_progress.attempts, 1)
-        self.assertEqual(topic_progress.correct_answers, 0)
-        self.assertEqual(topic_progress.last_outcome, "incorrect")
-
-    @patch("whatsapp_bot.views.generate_question")
-    def test_progress_message_reports_weak_areas(self, mock_generate_question):
-        mock_generate_question.side_effect = [
-            ("What is 9 + 1?", "10", "Addition"),
-            ("What is 2 + 2?", "4", "Addition"),
-        ]
-
-        phone_number = "whatsapp:+777777777"
-        self.client.post(
-            "/whatsapp/",
-            {"Body": "practice maths", "From": phone_number},
-            HTTP_HOST="127.0.0.1",
-        )
-        self.client.post(
-            "/whatsapp/",
-            {"Body": "7", "From": phone_number},
-            HTTP_HOST="127.0.0.1",
-        )
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "progress", "From": phone_number},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        body = response.content.decode()
-        self.assertIn("Current session: 0/1.", body)
-        self.assertIn("Revise next: Addition.", body)
-
-    @patch("whatsapp_bot.views.generate_question")
-    def test_english_option_answer_accepts_letter_or_word(self, mock_generate_question):
+    def test_practice_english_command_returns_question(self, mock_generate_question):
         mock_generate_question.return_value = (
-            "Choose the correct word: She ___ to school yesterday. A. go B. went C. going",
-            "B|went",
-            "Verb tense",
+            "Change this sentence to passive voice: The students completed the work.",
+            "The work was completed by the students.",
         )
 
-        phone_number = "whatsapp:+999999999"
-        self.client.post(
-            "/whatsapp/",
-            {"Body": "practice english", "From": phone_number},
-            HTTP_HOST="127.0.0.1",
-        )
         response = self.client.post(
             "/whatsapp/",
-            {"Body": "went", "From": phone_number},
+            {"Body": "Practice english", "From": "whatsapp:+111111111"},
             HTTP_HOST="127.0.0.1",
         )
 
-        self.assertIn("Correct! Well done.", response.content.decode())
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("English Practice Question", response.content.decode())
+        self.assertIn("Reply with your answer and I will mark it", response.content.decode())
+        mock_generate_question.assert_called_once_with(subject="english", exclude_questions=[], topic=None)
 
     @patch("whatsapp_bot.views.generate_question")
-    def test_new_practice_command_resets_session_score(self, mock_generate_question):
-        mock_generate_question.side_effect = [
-            ("What is 2 + 2?", "4", "Addition"),
-            ("What is 3 + 3?", "6", "Addition"),
-        ]
-
-        phone_number = "whatsapp:+121212121"
-        self.client.post(
-            "/whatsapp/",
-            {"Body": "practice maths", "From": phone_number},
-            HTTP_HOST="127.0.0.1",
-        )
-        self.client.post(
-            "/whatsapp/",
-            {"Body": "4", "From": phone_number},
-            HTTP_HOST="127.0.0.1",
-        )
-        self.client.post(
-            "/whatsapp/",
-            {"Body": "practice maths", "From": phone_number},
-            HTTP_HOST="127.0.0.1",
+    def test_whatsapp_practice_answer_returns_feedback_and_score(self, mock_generate_question):
+        mock_generate_question.return_value = (
+            "Change this sentence to passive voice: The students completed the work.",
+            "The work was completed by the students.",
         )
 
-        progress = UserProgress.objects.get(phone_number=phone_number)
-        self.assertEqual(progress.session_correct_answers, 0)
-        self.assertEqual(progress.session_total_attempts, 0)
-
-    @patch("whatsapp_bot.views.generate_question")
-    def test_stop_command_exits_practice_mode(self, mock_generate_question):
-        mock_generate_question.return_value = ("What is 2 + 2?", "4", "Addition")
-
-        phone_number = "whatsapp:+343434343"
         self.client.post(
             "/whatsapp/",
-            {"Body": "practice maths", "From": phone_number},
+            {"Body": "Practice english", "From": "whatsapp:+111111111"},
             HTTP_HOST="127.0.0.1",
         )
         response = self.client.post(
             "/whatsapp/",
-            {"Body": "stop", "From": phone_number},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertIn("Practice stopped.", response.content.decode())
-
-        progress = UserProgress.objects.get(phone_number=phone_number)
-        self.assertFalse(progress.awaiting_practice_answer)
-
-    def test_practice_english_grammar_uses_requested_topic(self):
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "practice english grammar", "From": "whatsapp:+454545454"},
+            {"Body": "The work was completed by the students.", "From": "whatsapp:+111111111"},
             HTTP_HOST="127.0.0.1",
         )
 
         self.assertEqual(response.status_code, 200)
-        body = response.content.decode().lower()
-        self.assertIn("practice question", body)
-        self.assertTrue(
-            "subject-verb agreement" in body or "articles" in body or "parts of speech" in body or "sentence correction" in body
-        )
-
-    def test_practice_english_passive_voice_uses_requested_topic(self):
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "practice english passive voice", "From": "whatsapp:+565656565"},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        body = response.content.decode().lower()
-        self.assertIn("practice question (passive voice", body)
-        self.assertIn("passive voice", body)
-
-    def test_english_topics_command_lists_available_topics(self):
-        response = self.client.post(
-            "/whatsapp/",
-            {"Body": "english topics", "From": "whatsapp:+676767676"},
-            HTTP_HOST="127.0.0.1",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        body = response.content.decode().lower()
-        self.assertIn("english topics:", body)
-        self.assertIn("passive voice", body)
-        self.assertIn("reported speech", body)
+        body = response.content.decode()
+        self.assertIn("English Practice Feedback", body)
+        self.assertIn("Correct. Well done.", body)
+        self.assertIn("Score: 1/1", body)
+        self.assertIn("Covered area focus: sentence structure, grammar, vocabulary, and expression.", body)

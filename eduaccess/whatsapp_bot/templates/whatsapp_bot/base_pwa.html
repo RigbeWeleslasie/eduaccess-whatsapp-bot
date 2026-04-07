@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f766e">
+  <title>{% block title %}EduAccess{% endblock %}</title>
+  <link rel="manifest" href="{% url 'manifest' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f4efe4;
+      --panel: #fffdf7;
+      --ink: #20303c;
+      --muted: #5d6d74;
+      --brand: #0f766e;
+      --brand-soft: #d7f3ee;
+      --accent: #f59e0b;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: "Nunito", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(245, 158, 11, 0.18), transparent 28%),
+        linear-gradient(180deg, #fbf5e8 0%, var(--bg) 100%);
+    }
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 24px 16px 48px;
+    }
+    .topbar {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 16px 16px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .topbar-brand {
+      color: var(--brand);
+      font-weight: 700;
+      text-decoration: none;
+      letter-spacing: 0.03em;
+    }
+    .topbar-links {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .topbar-note {
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .hero,
+    .card {
+      background: var(--panel);
+      border-radius: 18px;
+      box-shadow: 0 14px 36px rgba(32, 48, 60, 0.08);
+    }
+    .hero {
+      padding: 24px;
+      margin-bottom: 20px;
+      border: 1px solid rgba(15, 118, 110, 0.12);
+    }
+    .eyebrow {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--brand-soft);
+      color: var(--brand);
+      font-size: 14px;
+      letter-spacing: 0.02em;
+    }
+    h1, h2 {
+      margin-top: 0;
+    }
+    p {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .actions,
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .btn,
+    a.btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      min-width: 164px;
+      padding: 12px 18px;
+      border-radius: 999px;
+      border: 0;
+      background: var(--brand);
+      color: #fff;
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.2;
+      text-align: center;
+      cursor: pointer;
+    }
+    .btn.secondary,
+    a.btn.secondary {
+      background: transparent;
+      color: var(--brand);
+      border: 1px solid rgba(15, 118, 110, 0.28);
+    }
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+    .card {
+      padding: 20px;
+    }
+    .meta {
+      font-size: 14px;
+      color: var(--brand);
+      text-transform: capitalize;
+    }
+    .kicker {
+      margin: 0;
+      color: var(--brand);
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .install-note {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #fff8df;
+      color: #78560f;
+      line-height: 1.5;
+    }
+    .install-note[hidden] {
+      display: none;
+    }
+    .stack {
+      display: grid;
+      gap: 16px;
+    }
+    .mini-grid {
+      display: grid;
+      gap: 12px;
+    }
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+    .auth-actions .btn,
+    .auth-actions a.btn {
+      flex: 1 1 200px;
+    }
+    .soft-card {
+      padding: 16px;
+      border-radius: 16px;
+      background: #f8f5eb;
+      border: 1px solid rgba(15, 118, 110, 0.12);
+    }
+    label {
+      font-weight: 700;
+    }
+    textarea,
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid rgba(32, 48, 60, 0.16);
+      border-radius: 14px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+    }
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+    .conversation {
+      display: grid;
+      gap: 14px;
+    }
+    .bubble {
+      max-width: 100%;
+      padding: 14px 16px;
+      border-radius: 18px;
+      white-space: pre-wrap;
+      line-height: 1.55;
+    }
+    .bubble.student {
+      background: #e5f3ff;
+      margin-left: auto;
+    }
+    .bubble.assistant {
+      background: #f8f5eb;
+      border: 1px solid rgba(15, 118, 110, 0.14);
+    }
+    .bubble-meta {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--brand);
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    pre {
+      white-space: pre-wrap;
+      background: #f8fafc;
+      padding: 16px;
+      border-radius: 14px;
+      overflow-x: auto;
+    }
+    @media (min-width: 720px) {
+      .grid.two-up {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .mini-grid.two-up {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <div class="topbar">
+    <a class="topbar-brand" href="{% url 'offline_library' %}">EduAccess</a>
+    <div class="topbar-links">
+      {% if request.user.is_authenticated %}
+        <span class="topbar-note">Signed in as {{ request.user.username }}</span>
+        <a class="btn secondary" href="{% url 'dashboard' %}">Dashboard</a>
+        <a class="btn secondary" href="{% url 'study_assistant' %}">Study Assistant</a>
+        <form method="post" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button class="btn secondary" type="submit">Logout</button>
+        </form>
+      {% else %}
+        <a class="btn secondary" href="{% url 'login' %}">Login</a>
+        <a class="btn" href="{% url 'register' %}">Create Account</a>
+      {% endif %}
+    </div>
+  </div>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+  <script>
+    const isLocalDevHost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        if (isLocalDevHost) {
+          navigator.serviceWorker.getRegistrations().then(function (registrations) {
+            registrations.forEach(function (registration) {
+              registration.unregister();
+            });
+          });
+          return;
+        }
+
+        navigator.serviceWorker.getRegistration("/").then(function (registration) {
+          if (!registration) {
+            return navigator.serviceWorker.register("/service-worker.js");
+          }
+          return registration;
+        });
+      });
+    }
+
+    let deferredPrompt = null;
+    const installButton = document.getElementById("install-app");
+    const installStatus = document.getElementById("install-status");
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
+    const isiPhone = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+    const isLocalhost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+    const isInstallSecure = window.isSecureContext || isLocalhost;
+
+    function getManualInstallMessage() {
+      if (isiPhone) {
+        return "On iPhone or iPad, open Safari's Share menu and choose 'Add to Home Screen' to install EduAccess.";
+      }
+      return "Use your browser menu and choose 'Install app' or 'Add to Home screen' to install EduAccess on this device.";
+    }
+
+    function getInstallReadinessMessage() {
+      if (!isInstallSecure) {
+        return "EduAccess is running on an insecure address, so app installation is blocked here. Open it with https:// or test on http://localhost on the same device.";
+      }
+      if (isiPhone) {
+        return "Automatic install prompts do not appear on iPhone or iPad. Use Safari's Share menu and choose 'Add to Home Screen'.";
+      }
+      return "Tap 'Install EduAccess' to try the app install prompt. If your browser does not show one, " + getManualInstallMessage().toLowerCase();
+    }
+
+    function showInstallMessage(message) {
+      if (!installStatus) {
+        return;
+      }
+      installStatus.textContent = message;
+      installStatus.hidden = false;
+    }
+
+    if (isStandalone) {
+      if (installButton) {
+        installButton.hidden = true;
+      }
+      showInstallMessage("EduAccess is already installed on this device.");
+    }
+
+    window.addEventListener("beforeinstallprompt", function (event) {
+      event.preventDefault();
+      deferredPrompt = event;
+      if (installButton) {
+        installButton.hidden = false;
+      }
+      showInstallMessage("EduAccess is ready to install. Tap the button to add it to your home screen.");
+    });
+
+    window.addEventListener("appinstalled", function () {
+      deferredPrompt = null;
+      if (installButton) {
+        installButton.hidden = true;
+      }
+      showInstallMessage("EduAccess was installed successfully.");
+    });
+
+    if (installButton) {
+      installButton.addEventListener("click", async function () {
+        if (!deferredPrompt) {
+          showInstallMessage(getInstallReadinessMessage());
+          return;
+        }
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        installButton.hidden = true;
+      });
+    }
+
+    window.addEventListener("load", function () {
+      if (!isStandalone && !deferredPrompt && installButton) {
+        showInstallMessage(getInstallReadinessMessage());
+      }
+    });
+  </script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

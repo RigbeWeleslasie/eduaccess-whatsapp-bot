@@ -17,22 +17,37 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from whatsapp_bot.views import (
+    EduAccessLoginView,
+    EduAccessLogoutView,
     audio_pack_player,
     audio_pack_transcript_download,
+    dashboard_page,
     learning_pack_download,
-    offline_library_download,
+    offline_fallback_page,
     offline_library_page,
-    offline_bundle_download,
+    pwa_manifest,
+    register_page,
+    service_worker,
+    study_assistant_api,
+    study_assistant_page,
     whatsapp_webhook,
 )
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', EduAccessLoginView.as_view(), name='home'),
+    path('register/', register_page, name='register'),
+    path('login/', EduAccessLoginView.as_view(), name='login'),
+    path('logout/', EduAccessLogoutView.as_view(), name='logout'),
+    path('dashboard/', dashboard_page, name='dashboard'),
+    path('manifest.json', pwa_manifest, name='manifest'),
+    path('service-worker.js', service_worker, name='service_worker'),
+    path('study-assistant/', study_assistant_page, name='study_assistant'),
+    path('study-assistant/api/', study_assistant_api),
+    path('offline-fallback/', offline_fallback_page, name='offline_fallback'),
+    path('offline-library/', offline_library_page, name='offline_library'),
+    path('packs/<slug:slug>/', learning_pack_download),
     path('audio-packs/<slug:slug>/player/', audio_pack_player),
     path('audio-packs/<slug:slug>/transcript/', audio_pack_transcript_download),
-    path('offline-library/download/', offline_library_download),
-    path('offline-library/', offline_library_page),
-    path('offline-packs/<slug:slug>/', offline_bundle_download),
-    path('packs/<slug:slug>/', learning_pack_download),
     path('whatsapp/', whatsapp_webhook),
 ]

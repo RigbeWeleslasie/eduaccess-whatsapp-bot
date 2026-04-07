@@ -1,0 +1,19 @@
+{% extends "whatsapp_bot/base_pwa.html" %}
+
+{% block title %}Offline Help{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <span class="eyebrow">Offline Support</span>
+    <h1>You are offline</h1>
+    <p>If your connection drops, reopen EduAccess from your phone home screen and use the packs you already downloaded.</p>
+    <div class="actions">
+      <a class="btn" href="{% url 'offline_library' %}">Back to Library</a>
+    </div>
+  </section>
+
+  <article class="card">
+    <h2>What still works offline</h2>
+    <p>Downloaded text packs, transcript files, and audio lesson pages that were already cached by the PWA.</p>
+  </article>
+{% endblock %}

@@ -1,8 +1,16 @@
+from django.conf import settings
 from django.db import models
 
 
 class UserProgress(models.Model):
-    phone_number = models.CharField(max_length=20, unique=True)
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="learning_progress",
+    )
+    phone_number = models.CharField(max_length=20, unique=True, null=True, blank=True)
     low_data_mode = models.BooleanField(default=True)
     offline_mode = models.BooleanField(default=False)
     last_question = models.TextField(blank=True)
@@ -21,6 +29,9 @@ class UserProgress(models.Model):
     lesson_subject = models.CharField(max_length=50, blank=True)
     lesson_goal = models.IntegerField(default=3)
     lesson_progress = models.IntegerField(default=0)
+
+    def __str__(self):
+        return self.user.username if self.user else (self.phone_number or "progress")
 
 
 class PracticeQuestion(models.Model):
