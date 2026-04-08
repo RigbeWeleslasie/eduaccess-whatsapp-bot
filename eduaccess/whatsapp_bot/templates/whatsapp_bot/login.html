@@ -9,6 +9,26 @@
       color: var(--muted);
       font-size: 14px;
     }
+    .errorlist,
+    .errorlist.nonfield {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      color: #c62828;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.5;
+    }
+    .errorlist {
+      margin-top: 6px;
+    }
+    .errorlist.nonfield {
+      margin-bottom: 4px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(198, 40, 40, 0.08);
+      border: 1px solid rgba(198, 40, 40, 0.16);
+    }
   </style>
 {% endblock %}
 
