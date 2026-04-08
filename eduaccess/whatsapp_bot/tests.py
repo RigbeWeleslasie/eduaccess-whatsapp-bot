@@ -427,6 +427,24 @@ class PwaTests(TestCase):
         self.assertIn("Study Pack:", body)
         self.assertIn("/packs/linear-equations/", body)
 
+    @patch("whatsapp_bot.views.ask_ai")
+    def test_normal_maths_question_uses_local_fallback_when_ai_fails(self, mock_ask_ai):
+        User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+        mock_ask_ai.side_effect = RuntimeError("AI unavailable")
+
+        response = self.client.post(
+            "/study-assistant/",
+            {"question": "What is a derivative?"},
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("A derivative shows the rate of change", body)
+        self.assertIn("/audio-packs/audio-calculus/player/", body)
+        self.assertNotIn("couldn't process your request right now", body)
+
     @patch("whatsapp_bot.views.get_or_generate_audio_pack")
     @patch("whatsapp_bot.views.get_or_generate_learning_pack")
     def test_offline_library_shows_recent_topic_from_normal_chat(
@@ -594,6 +612,21 @@ class WhatsAppWebhookTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("Derivative means rate of change.", response.content.decode())
         mock_ask_ai.assert_called_once_with("What is a derivative?")
+
+    @patch("whatsapp_bot.views.ask_ai")
+    def test_normal_message_uses_local_fallback_when_ai_fails(self, mock_ask_ai):
+        mock_ask_ai.side_effect = RuntimeError("AI unavailable")
+
+        response = self.client.post(
+            "/whatsapp/",
+            {"Body": "What is a derivative?", "From": "whatsapp:+333333333"},
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("A derivative shows the rate of change", body)
+        self.assertIn("/packs/calculus/", body)
 
     def test_offline_library_command_returns_link(self):
         response = self.client.post(

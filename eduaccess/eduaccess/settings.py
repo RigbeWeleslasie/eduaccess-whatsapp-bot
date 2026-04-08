@@ -91,6 +91,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'whatsapp_bot.context_processors.whatsapp_cta',
             ],
         },
     },
@@ -142,6 +143,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+WHATSAPP_SANDBOX_NUMBER = os.getenv("WHATSAPP_SANDBOX_NUMBER", "+14155238886").strip()
+WHATSAPP_SANDBOX_JOIN_CODE = os.getenv("WHATSAPP_SANDBOX_JOIN_CODE", "join sentence-settle").strip()
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 

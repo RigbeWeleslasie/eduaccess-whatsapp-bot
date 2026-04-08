@@ -17,6 +17,7 @@ from .forms import EduAccessAuthenticationForm, EduAccessUserCreationForm
 from .models import UserProgress
 from .ai import (
     ask_ai,
+    build_local_tutor_answer,
     generate_audio_pack,
     get_audio_pack_by_slug_or_topic,
     get_audio_packs,
@@ -555,6 +556,14 @@ def _build_tutor_reply(request, incoming_msg, practice_state):
             return f"{ai_reply}{_build_topic_resource_lines(request, inferred_subject, inferred_topic)}"
         return ai_reply
     except Exception:
+        local_answer = build_local_tutor_answer(incoming_msg)
+        if local_answer:
+            local_subject = local_answer.get("subject")
+            local_topic = local_answer.get("topic")
+            if local_topic:
+                _remember_topic(practice_state, local_topic, local_subject)
+                return f"{local_answer['answer']}{_build_topic_resource_lines(request, local_subject, local_topic)}"
+            return local_answer["answer"]
         if inferred_topic:
             return _build_topic_study_fallback(request, inferred_subject, inferred_topic)
         return (

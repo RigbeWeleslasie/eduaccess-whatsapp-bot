@@ -417,6 +417,151 @@ TOPIC_ALIASES = {
     "adjective": "adjectives",
 }
 
+LOCAL_TUTOR_KNOWLEDGE = [
+    {
+        "subject": "maths",
+        "keywords": ["derivative", "differentiate", "differentiation", "rate of change"],
+        "topic": "calculus",
+        "answer": (
+            "A derivative shows the rate of change of one quantity with respect to another. "
+            "In simple terms, it tells us how quickly a function is changing at a point. "
+            "For example, if y = x^2, the derivative is 2x, so the slope changes depending on the value of x. "
+            "A good next step is to practise differentiating simple powers such as x^2, 3x^2, and 5x."
+        ),
+    },
+    {
+        "subject": "maths",
+        "keywords": ["linear equation", "linear equations", "solve for x", "unknown value"],
+        "topic": "linear equations",
+        "answer": (
+            "A linear equation is an equation where the variable has power 1, for example 2x + 3 = 11. "
+            "To solve it, isolate the variable step by step by doing the same operation on both sides. "
+            "For 2x + 3 = 11, subtract 3 first to get 2x = 8, then divide by 2 to get x = 4. "
+            "Always check your answer by substituting it back into the original equation."
+        ),
+    },
+    {
+        "subject": "maths",
+        "keywords": ["algebra", "expression", "equation"],
+        "topic": "algebra",
+        "answer": (
+            "Algebra uses letters and symbols to represent unknown numbers and relationships. "
+            "An expression is a maths phrase like 3x + 2, while an equation has an equals sign, such as x + 5 = 12. "
+            "The main skill in algebra is to keep both sides balanced while solving for the unknown value."
+        ),
+    },
+    {
+        "subject": "maths",
+        "keywords": ["fraction", "fractions", "numerator", "denominator"],
+        "topic": "fractions",
+        "answer": (
+            "A fraction shows part of a whole. The top number is the numerator and the bottom number is the denominator. "
+            "To add or subtract fractions, first make sure they have the same denominator. "
+            "For example, 1/4 + 1/4 = 2/4, which simplifies to 1/2."
+        ),
+    },
+    {
+        "subject": "maths",
+        "keywords": ["percentage", "percentages", "percent"],
+        "topic": "percentages",
+        "answer": (
+            "A percentage means a number out of 100. "
+            "To find a percentage of a quantity, change the percentage into a fraction or decimal and multiply. "
+            "For example, 20% of 50 is 20/100 multiplied by 50, which equals 10."
+        ),
+    },
+    {
+        "subject": "maths",
+        "keywords": ["ratio", "ratios"],
+        "topic": "ratios",
+        "answer": (
+            "A ratio compares two quantities. "
+            "For example, a ratio of 2:3 means for every 2 parts of one quantity, there are 3 parts of the other. "
+            "When simplifying a ratio, divide both parts by the same common factor."
+        ),
+    },
+    {
+        "subject": "maths",
+        "keywords": ["trigonometry", "sine", "cosine", "tangent"],
+        "topic": "trigonometry",
+        "answer": (
+            "Trigonometry studies the relationship between angles and sides in triangles. "
+            "The main ratios are sine, cosine, and tangent. "
+            "For a right-angled triangle, sine equals opposite over hypotenuse, cosine equals adjacent over hypotenuse, and tangent equals opposite over adjacent."
+        ),
+    },
+    {
+        "subject": "english",
+        "keywords": ["passive voice", "active voice"],
+        "topic": "passive voice",
+        "answer": (
+            "Passive voice puts the receiver of the action first. "
+            "For example, 'The chef cooked the meal' in active voice becomes 'The meal was cooked by the chef' in passive voice. "
+            "The common pattern is: object + form of 'be' + past participle + optional doer."
+        ),
+    },
+    {
+        "subject": "english",
+        "keywords": ["reported speech", "indirect speech", "direct speech"],
+        "topic": "reported speech",
+        "answer": (
+            "Reported speech explains what someone said without repeating the exact words. "
+            "For example, 'Amina said, \"I am tired\"' becomes 'Amina said that she was tired.' "
+            "When changing direct speech to reported speech, pronouns, tense, and time words may change."
+        ),
+    },
+    {
+        "subject": "english",
+        "keywords": ["adjective", "adjectives"],
+        "topic": "adjectives",
+        "answer": (
+            "An adjective describes a noun or pronoun. "
+            "It tells us more about size, colour, shape, number, or quality. "
+            "In 'the tall boy', the word 'tall' is the adjective because it describes the boy."
+        ),
+    },
+    {
+        "subject": "english",
+        "keywords": ["tense", "tenses", "past tense", "present tense", "future tense"],
+        "topic": "tenses",
+        "answer": (
+            "Tenses show the time of an action. "
+            "Present tense describes what happens now, past tense describes what already happened, and future tense describes what will happen. "
+            "For example: 'I walk', 'I walked', and 'I will walk'."
+        ),
+    },
+    {
+        "subject": "english",
+        "keywords": ["noun", "nouns"],
+        "topic": "parts of speech",
+        "answer": (
+            "A noun names a person, place, thing, or idea. "
+            "Examples include teacher, Nairobi, book, and happiness. "
+            "A good way to identify a noun is to ask whether the word is naming something."
+        ),
+    },
+    {
+        "subject": "english",
+        "keywords": ["verb", "verbs"],
+        "topic": "parts of speech",
+        "answer": (
+            "A verb shows an action or a state. "
+            "Action verbs include run, read, and sing, while state verbs include be, seem, and know. "
+            "In a sentence, the verb is the word that tells what is happening."
+        ),
+    },
+    {
+        "subject": "english",
+        "keywords": ["conjunction", "conjunctions"],
+        "topic": "conjunctions",
+        "answer": (
+            "A conjunction joins words, phrases, or clauses. "
+            "Common conjunctions include and, but, because, so, and although. "
+            "For example, 'I stayed indoors because it was raining' uses 'because' to join the ideas."
+        ),
+    },
+]
+
 
 def _extract_text(response_data):
     candidates = response_data.get("candidates", [])
@@ -472,6 +617,61 @@ def _call_gemini(user_prompt, system_prompt=None):
 
 def ask_ai(question):
     return _call_gemini(question, system_prompt="You are a helpful tutor.")
+
+
+def build_local_tutor_answer(question):
+    normalized = re.sub(r"\s+", " ", question.strip().lower())
+    if not normalized:
+        return None
+
+    for entry in LOCAL_TUTOR_KNOWLEDGE:
+        if any(keyword in normalized for keyword in entry["keywords"]):
+            return {
+                "subject": entry["subject"],
+                "topic": entry["topic"],
+                "answer": entry["answer"],
+            }
+
+    for subject in ("maths", "english"):
+        for topic in get_supported_topics(subject=subject):
+            if topic in normalized:
+                topic_title = _titleize_topic(topic)
+                if subject == "maths":
+                    answer = (
+                        f"{topic_title} is a Maths topic that becomes easier when you learn the main rule, "
+                        "study one worked example, and then practise similar questions step by step. "
+                        "Start by identifying what the question is asking, choose the correct rule, and check each stage of your working carefully."
+                    )
+                else:
+                    answer = (
+                        f"{topic_title} is an English topic that is best learnt through clear rules, examples, "
+                        "and sentence practice. Start by understanding the pattern, compare correct and incorrect examples, "
+                        "and then write a few sentences of your own."
+                    )
+                return {"subject": subject, "topic": topic, "answer": answer}
+
+    inferred_subject = _infer_subject(normalized)
+    if inferred_subject == "maths":
+        return {
+            "subject": "maths",
+            "topic": None,
+            "answer": (
+                "This looks like a Maths question. Start by identifying the rule or formula involved, "
+                "work through one example carefully, and keep your steps clear and balanced. "
+                "If you want, you can also ask the same question with a specific topic such as algebra, fractions, calculus, or linear equations."
+            ),
+        }
+    if inferred_subject == "english":
+        return {
+            "subject": "english",
+            "topic": None,
+            "answer": (
+                "This looks like an English question. A good approach is to focus on the rule, look at one correct example, "
+                "and then practise using it in a full sentence. If you want a more targeted explanation, ask with a topic such as adjectives, tenses, passive voice, or reported speech."
+            ),
+        }
+
+    return None
 
 
 def _slugify_topic(topic):
