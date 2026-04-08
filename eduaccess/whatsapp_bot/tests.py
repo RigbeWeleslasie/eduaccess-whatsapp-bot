@@ -344,6 +344,22 @@ class PwaTests(TestCase):
         self.assertIn("Algebra uses letters to represent unknown values.", response.content.decode())
         mock_ask_ai.assert_called_once_with("Explain algebra")
 
+    def test_study_assistant_page_greeting_shows_capabilities(self):
+        User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+
+        response = self.client.post(
+            "/study-assistant/",
+            {"question": "Hello"},
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("Hi there. I can help you with English and Maths.", body)
+        self.assertIn("practice maths", body)
+        self.assertIn("practice english", body)
+
     @patch("whatsapp_bot.views.get_or_generate_audio_pack")
     @patch("whatsapp_bot.views.get_or_generate_learning_pack")
     @patch("whatsapp_bot.views.ask_ai")
@@ -599,6 +615,19 @@ class PwaTests(TestCase):
 
 
 class WhatsAppWebhookTests(TestCase):
+    def test_greeting_returns_capabilities_message(self):
+        response = self.client.post(
+            "/whatsapp/",
+            {"Body": "Hi", "From": "whatsapp:+111111111"},
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("Hi there. I can help you with English and Maths.", body)
+        self.assertIn("practice maths", body)
+        self.assertIn("practice english", body)
+
     @patch("whatsapp_bot.views.ask_ai")
     def test_normal_message_uses_ai(self, mock_ask_ai):
         mock_ask_ai.return_value = "Derivative means rate of change."

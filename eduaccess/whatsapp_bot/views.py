@@ -461,11 +461,27 @@ def _build_practice_feedback_reply(state, student_answer):
     )
 
 
+def _build_greeting_reply(request):
+    return (
+        "Hi there. I can help you with English and Maths.\n\n"
+        "You can ask a question, practise by topic, get feedback, and open offline study resources.\n\n"
+        "Try messages like:\n"
+        "- practice maths\n"
+        "- practice english\n"
+        "- Teach me linear equations\n"
+        "- Explain passive voice\n"
+        f"- offline library: {_get_request_base_url(request)}/offline-library/"
+    )
+
+
 def _build_tutor_reply(request, incoming_msg, practice_state):
     normalized = incoming_msg.strip().lower()
     practice_subject = None
     is_score_request = normalized in {"score", "progress", "my score", "show progress"}
     is_practice_request = False
+
+    if normalized in {"hi", "hello", "hey", "good morning", "good afternoon", "good evening", "start"}:
+        return _build_greeting_reply(request)
 
     if normalized in {"offline library", "study offline", "offline app"}:
         return f"Open your offline library here: {_get_request_base_url(request)}/offline-library/"
