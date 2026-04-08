@@ -411,6 +411,24 @@ class PwaTests(TestCase):
         self.assertIn("Algebra uses letters to represent unknown values.", response.content.decode())
         mock_ask_ai.assert_called_once_with("Explain algebra")
 
+    @patch("whatsapp_bot.views.ask_ai")
+    def test_ai_answer_includes_topic_specific_resources_for_derivative_question(self, mock_ask_ai):
+        User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+        mock_ask_ai.return_value = "A derivative measures rate of change."
+
+        response = self.client.post(
+            "/study-assistant/",
+            {"question": "What is a derivative?"},
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("A derivative measures rate of change.", body)
+        self.assertIn("/packs/calculus/", body)
+        self.assertIn("/audio-packs/audio-calculus/player/", body)
+
     def test_study_assistant_page_greeting_shows_capabilities(self):
         User.objects.create_user(username="student1", password="StrongPass123")
         self.client.login(username="student1", password="StrongPass123")
@@ -427,6 +445,20 @@ class PwaTests(TestCase):
         self.assertIn("practice maths", body)
         self.assertIn("practice english", body)
 
+    def test_study_assistant_returns_scope_message_for_biology_question(self):
+        User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+
+        response = self.client.post(
+            "/study-assistant/",
+            {"question": "Explain biology cell division"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("This application only answers Maths and English questions for now.", body)
+        self.assertIn("It will be upgraded later on. Thank you.", body)
+
     def test_study_assistant_solves_raw_linear_equation(self):
         User.objects.create_user(username="student1", password="StrongPass123")
         self.client.login(username="student1", password="StrongPass123")
@@ -442,6 +474,22 @@ class PwaTests(TestCase):
         self.assertIn("Linear equation solution", body)
         self.assertIn("Answer: x = -2", body)
         self.assertIn("/packs/linear-equations/", body)
+
+    def test_study_assistant_solves_quadratic_equation(self):
+        User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+
+        response = self.client.post(
+            "/study-assistant/",
+            {"question": "2x^2-4=16"},
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("Quadratic equation solution", body)
+        self.assertIn("Answer: x = 3.162278 or x = -3.162278", body)
+        self.assertIn("/packs/quadratic-equations/", body)
 
     @patch("whatsapp_bot.views.generate_question")
     def test_new_linear_equation_question_is_not_graded_as_pending_practice_answer(self, mock_generate_question):
@@ -771,6 +819,18 @@ class WhatsAppWebhookTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("/offline-library/", response.content.decode())
 
+    def test_out_of_scope_question_returns_scope_message(self):
+        response = self.client.post(
+            "/whatsapp/",
+            {"Body": "What is photosynthesis in biology?", "From": "whatsapp:+111111111"},
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("This application only answers Maths and English questions for now.", body)
+        self.assertIn("It will be upgraded later on. Thank you.", body)
+
     @patch("whatsapp_bot.views.ask_ai")
     @patch("whatsapp_bot.views.transcribe_whatsapp_audio")
     def test_audio_question_is_transcribed_and_answered(self, mock_transcribe_whatsapp_audio, mock_ask_ai):
@@ -796,6 +856,50 @@ class WhatsAppWebhookTests(TestCase):
             content_type="audio/ogg",
         )
         mock_ask_ai.assert_called_once_with("What is a noun?")
+
+    @patch("whatsapp_bot.views.transcribe_whatsapp_audio")
+    def test_audio_question_with_codec_content_type_is_processed(self, mock_transcribe_whatsapp_audio):
+        mock_transcribe_whatsapp_audio.return_value = "2x^2-4=16"
+
+        response = self.client.post(
+            "/whatsapp/",
+            {
+                "Body": "",
+                "From": "whatsapp:+111111111",
+                "NumMedia": "1",
+                "MediaUrl0": "https://example.com/audio.ogg",
+                "MediaContentType0": "audio/ogg; codecs=opus",
+            },
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("Quadratic equation solution", body)
+        self.assertIn("Answer: x = 3.162278 or x = -3.162278", body)
+        mock_transcribe_whatsapp_audio.assert_called_once_with(
+            "https://example.com/audio.ogg",
+            content_type="audio/ogg; codecs=opus",
+        )
+
+    @patch("whatsapp_bot.views.transcribe_whatsapp_audio")
+    def test_audio_transcription_failure_returns_retry_message(self, mock_transcribe_whatsapp_audio):
+        mock_transcribe_whatsapp_audio.side_effect = RuntimeError("transcription failed")
+
+        response = self.client.post(
+            "/whatsapp/",
+            {
+                "Body": "",
+                "From": "whatsapp:+111111111",
+                "NumMedia": "1",
+                "MediaUrl0": "https://example.com/audio.ogg",
+                "MediaContentType0": "audio/ogg; codecs=opus",
+            },
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("I could not transcribe your audio just now", response.content.decode())
 
     def test_empty_message_without_text_or_audio_prompts_for_supported_input(self):
         response = self.client.post(

@@ -29,8 +29,10 @@ from .ai import (
     get_learning_packs,
     get_supported_topics,
     looks_like_linear_equation_question,
+    looks_like_quadratic_equation_question,
     resolve_topic_from_text,
     solve_linear_equation,
+    solve_quadratic_equation,
     transcribe_whatsapp_audio,
 )
 
@@ -258,6 +260,40 @@ def _looks_like_new_learning_request(message):
     return normalized.startswith(request_starters)
 
 
+def _unsupported_subject_reply():
+    return (
+        "This application only answers Maths and English questions for now. "
+        "It will be upgraded later on. Thank you."
+    )
+
+
+def _is_out_of_scope_question(message):
+    normalized = re.sub(r"\s+", " ", (message or "").strip().lower())
+    if not normalized:
+        return False
+
+    unsupported_subject_keywords = {
+        "biology",
+        "chemistry",
+        "physics",
+        "history",
+        "geography",
+        "civics",
+        "economics",
+        "commerce",
+        "agriculture",
+        "kiswahili",
+        "swahili",
+        "computer studies",
+        "computer science",
+        "religious education",
+        "cre",
+        "ire",
+    }
+
+    return any(keyword in normalized for keyword in unsupported_subject_keywords)
+
+
 def _format_score(state, subject=None):
     if subject:
         current = state.get("subject_stats", {}).get(subject, {"attempts": 0, "correct": 0})
@@ -389,6 +425,27 @@ def _detect_study_topic(message):
     return resolve_topic_from_text(message)
 
 
+def _resolve_resource_topic(message):
+    if looks_like_linear_equation_question(message):
+        return "maths", "linear equations"
+
+    if looks_like_quadratic_equation_question(message):
+        return "maths", "quadratic equations"
+
+    inferred_subject, inferred_topic = _detect_study_topic(message)
+    if inferred_topic:
+        return inferred_subject, inferred_topic
+
+    local_answer = build_local_tutor_answer(message)
+    if local_answer:
+        local_subject = local_answer.get("subject")
+        local_topic = local_answer.get("topic")
+        if local_subject in {"maths", "english"} and local_topic:
+            return local_subject, local_topic
+
+    return None, None
+
+
 def _build_practice_question_reply(request, state, subject):
     topic = None
     if isinstance(subject, tuple):
@@ -475,14 +532,20 @@ def _extract_audio_question_from_request(request):
     except ValueError:
         num_media = 0
 
+    found_audio = False
+
     for index in range(num_media):
         content_type = (request.POST.get(f"MediaContentType{index}", "") or "").strip().lower()
         media_url = (request.POST.get(f"MediaUrl{index}", "") or "").strip()
         if content_type.startswith("audio/") and media_url:
-            transcript = transcribe_whatsapp_audio(media_url, content_type=content_type)
-            return transcript.strip()
+            found_audio = True
+            try:
+                transcript = transcribe_whatsapp_audio(media_url, content_type=content_type)
+            except Exception:
+                continue
+            return transcript.strip(), False
 
-    return None
+    return "", found_audio
 
 
 def _build_tutor_reply(request, incoming_msg, practice_state):
@@ -496,6 +559,9 @@ def _build_tutor_reply(request, incoming_msg, practice_state):
 
     if normalized in {"offline library", "study offline", "offline app"}:
         return f"Open your offline library here: {_get_request_base_url(request)}/offline-library/"
+
+    if _is_out_of_scope_question(incoming_msg):
+        return _unsupported_subject_reply()
 
     if normalized.startswith("practice "):
         practice_body = normalized[9:].strip()
@@ -537,6 +603,7 @@ def _build_tutor_reply(request, incoming_msg, practice_state):
     if practice_state.get("pending") and (
         _looks_like_new_learning_request(incoming_msg)
         or looks_like_linear_equation_question(incoming_msg)
+        or looks_like_quadratic_equation_question(incoming_msg)
     ):
         practice_state["pending"] = None
 
@@ -548,6 +615,11 @@ def _build_tutor_reply(request, incoming_msg, practice_state):
     if solved_equation:
         _remember_topic(practice_state, "linear equations", "maths")
         return f"{solved_equation}{_build_topic_resource_lines(request, 'maths', 'linear equations')}"
+
+    solved_quadratic = solve_quadratic_equation(incoming_msg)
+    if solved_quadratic:
+        _remember_topic(practice_state, "quadratic equations", "maths")
+        return f"{solved_quadratic}{_build_topic_resource_lines(request, 'maths', 'quadratic equations')}"
 
     if normalized.startswith("pack "):
         query = normalized[5:].strip()
@@ -581,9 +653,11 @@ def _build_tutor_reply(request, incoming_msg, practice_state):
             )
         return "I could not find that audio pack. Try 'offline library' to browse available topics."
 
-    inferred_subject, inferred_topic = _detect_study_topic(incoming_msg)
+    inferred_subject, inferred_topic = _resolve_resource_topic(incoming_msg)
     if inferred_topic:
         _remember_topic(practice_state, inferred_topic, inferred_subject)
+
+    local_answer = build_local_tutor_answer(incoming_msg)
 
     try:
         ai_reply = ask_ai(incoming_msg)
@@ -591,7 +665,6 @@ def _build_tutor_reply(request, incoming_msg, practice_state):
             return f"{ai_reply}{_build_topic_resource_lines(request, inferred_subject, inferred_topic)}"
         return ai_reply
     except Exception:
-        local_answer = build_local_tutor_answer(incoming_msg)
         if local_answer:
             local_subject = local_answer.get("subject")
             local_topic = local_answer.get("topic")
@@ -914,12 +987,20 @@ def whatsapp_webhook(request):
         try:
             progress, practice_state = _load_whatsapp_practice_state(phone_number)
             if not incoming_msg:
-                incoming_msg = _extract_audio_question_from_request(request) or ""
+                incoming_msg, had_audio = _extract_audio_question_from_request(request)
+            else:
+                had_audio = False
             if incoming_msg:
                 reply = _build_tutor_reply(request, incoming_msg, practice_state)
                 _save_whatsapp_practice_state(progress, practice_state)
             else:
-                reply = "Hi! Please send a text or audio question so I can help you."
+                if had_audio:
+                    reply = (
+                        "Hi! I could not transcribe your audio just now. "
+                        "Please try again with a clear audio recording or send the question as text."
+                    )
+                else:
+                    reply = "Hi! Please send a text or audio question so I can help you."
         except Exception:
             print("[whatsapp_webhook] error while processing request")
             traceback.print_exc()

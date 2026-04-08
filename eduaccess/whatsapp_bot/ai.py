@@ -4,6 +4,7 @@ import os
 import random
 import re
 import base64
+import math
 from fractions import Fraction
 from pathlib import Path
 from urllib import error, request
@@ -625,7 +626,7 @@ def ask_ai(question):
 
 
 def _extension_from_content_type(content_type):
-    content_type = (content_type or "").lower()
+    content_type = (content_type or "").split(";", 1)[0].strip().lower()
     mapping = {
         "audio/ogg": ".ogg",
         "audio/opus": ".ogg",
@@ -659,7 +660,19 @@ def transcribe_audio_bytes(audio_bytes, content_type=None):
     if not audio_bytes:
         raise ValueError("Audio file is empty.")
 
-    mime_type = (content_type or "").strip().lower() or "audio/ogg"
+    mime_type = (content_type or "").split(";", 1)[0].strip().lower() or "audio/ogg"
+    if mime_type not in {
+        "audio/ogg",
+        "audio/opus",
+        "audio/mpeg",
+        "audio/mp3",
+        "audio/mp4",
+        "audio/aac",
+        "audio/wav",
+        "audio/x-wav",
+        "audio/webm",
+    }:
+        mime_type = "audio/ogg"
     payload = {
         "contents": [
             {
@@ -769,8 +782,61 @@ def _parse_linear_expression(expression, variable):
     return coefficient, constant
 
 
+def _parse_quadratic_expression(expression, variable):
+    normalized = (
+        expression.replace(" ", "")
+        .replace("*", "")
+        .replace("−", "-")
+        .replace("²", "^2")
+    )
+    if not normalized:
+        raise ValueError("Empty expression")
+
+    terms = re.findall(r"[+-]?[^+-]+", normalized)
+    if not terms:
+        raise ValueError("No terms found")
+
+    quadratic = Fraction(0)
+    linear = Fraction(0)
+    constant = Fraction(0)
+
+    for term in terms:
+        quadratic_match = re.fullmatch(
+            rf"([+-]?)(\d+(?:\.\d+)?)?{re.escape(variable)}\^2",
+            term,
+        )
+        if quadratic_match:
+            sign, factor = quadratic_match.groups()
+            coefficient = factor or "1"
+            if sign == "-":
+                coefficient = f"-{coefficient}"
+            quadratic += _parse_fraction(coefficient)
+            continue
+
+        if variable in term:
+            if term.count(variable) != 1 or "^" in term:
+                raise ValueError("Unsupported variable term")
+            if term.endswith(variable):
+                factor = term[:-1]
+                if factor in {"", "+"}:
+                    linear += Fraction(1)
+                elif factor == "-":
+                    linear -= Fraction(1)
+                else:
+                    linear += _parse_fraction(factor)
+                continue
+
+            raise ValueError("Unsupported linear term")
+
+        constant += _parse_fraction(term)
+
+    return quadratic, linear, constant
+
+
 def looks_like_linear_equation_question(question):
     normalized = question.strip().lower()
+    if "^2" in normalized or "²" in normalized:
+        return False
     if normalized.count("=") != 1:
         return False
 
@@ -785,6 +851,19 @@ def looks_like_linear_equation_question(question):
         return False
 
     return bool(re.search(r"\d", normalized))
+
+
+def looks_like_quadratic_equation_question(question):
+    normalized = question.strip().lower().replace("²", "^2")
+    if normalized.count("=") != 1:
+        return False
+
+    variable_matches = re.findall(r"[a-z]", normalized)
+    unique_variables = set(variable_matches)
+    if len(unique_variables) != 1:
+        return False
+
+    return "^2" in normalized and bool(re.search(r"\d", normalized))
 
 
 def solve_linear_equation(question):
@@ -820,6 +899,71 @@ def solve_linear_equation(question):
     )
 
 
+def _format_quadratic_solution_value(value):
+    if isinstance(value, int):
+        return str(value)
+    rounded = round(value, 6)
+    if rounded.is_integer():
+        return str(int(rounded))
+    return str(rounded)
+
+
+def solve_quadratic_equation(question):
+    if not looks_like_quadratic_equation_question(question):
+        return None
+
+    normalized = question.strip().lower().replace("²", "^2")
+    variable = re.findall(r"[a-z]", normalized)[0]
+    left_side, right_side = [part.strip() for part in normalized.split("=", 1)]
+
+    try:
+        left_quadratic, left_linear, left_constant = _parse_quadratic_expression(left_side, variable)
+        right_quadratic, right_linear, right_constant = _parse_quadratic_expression(right_side, variable)
+    except ValueError:
+        return None
+
+    a = left_quadratic - right_quadratic
+    b = left_linear - right_linear
+    c = left_constant - right_constant
+
+    if a == 0:
+        return None
+
+    discriminant = b * b - (4 * a * c)
+    if discriminant < 0:
+        return (
+            "Quadratic equation solution\n"
+            f"Equation: {question.strip()}\n"
+            f"Standard form: {_fraction_to_display(a)}{variable}^2 + {_fraction_to_display(b)}{variable} + {_fraction_to_display(c)} = 0\n"
+            "This equation has no real-number solution because the discriminant is negative."
+        )
+
+    discriminant_value = float(discriminant)
+    sqrt_discriminant = math.isqrt(int(discriminant_value)) if discriminant.denominator == 1 else None
+    if sqrt_discriminant is not None and sqrt_discriminant * sqrt_discriminant == int(discriminant_value):
+        root_one = Fraction(-b + sqrt_discriminant, 2 * a)
+        root_two = Fraction(-b - sqrt_discriminant, 2 * a)
+        root_one_text = _fraction_to_display(root_one)
+        root_two_text = _fraction_to_display(root_two)
+    else:
+        sqrt_discriminant_float = math.sqrt(discriminant_value)
+        denominator = float(2 * a)
+        root_one_text = _format_quadratic_solution_value((-float(b) + sqrt_discriminant_float) / denominator)
+        root_two_text = _format_quadratic_solution_value((-float(b) - sqrt_discriminant_float) / denominator)
+
+    if root_one_text == root_two_text:
+        answer_line = f"Answer: {variable} = {root_one_text}"
+    else:
+        answer_line = f"Answer: {variable} = {root_one_text} or {variable} = {root_two_text}"
+
+    return (
+        "Quadratic equation solution\n"
+        f"Equation: {question.strip()}\n"
+        f"Standard form: {_fraction_to_display(a)}{variable}^2 + {_fraction_to_display(b)}{variable} + {_fraction_to_display(c)} = 0\n"
+        f"{answer_line}"
+    )
+
+
 def build_local_tutor_answer(question):
     normalized = re.sub(r"\s+", " ", question.strip().lower())
     if not normalized:
@@ -831,6 +975,14 @@ def build_local_tutor_answer(question):
             "subject": "maths",
             "topic": "linear equations",
             "answer": solved_equation,
+        }
+
+    solved_quadratic = solve_quadratic_equation(question)
+    if solved_quadratic:
+        return {
+            "subject": "maths",
+            "topic": "quadratic equations",
+            "answer": solved_quadratic,
         }
 
     for entry in LOCAL_TUTOR_KNOWLEDGE:
