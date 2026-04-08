@@ -459,6 +459,20 @@ class PwaTests(TestCase):
         self.assertIn("This application only answers Maths and English questions for now.", body)
         self.assertIn("It will be upgraded later on. Thank you.", body)
 
+    def test_study_assistant_returns_scope_message_for_photosynthesis_variant(self):
+        User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+
+        response = self.client.post(
+            "/study-assistant/",
+            {"question": "what is photosynthess"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("This application only answers Maths and English questions for now.", body)
+        self.assertIn("It will be upgraded later on. Thank you.", body)
+
     def test_study_assistant_solves_raw_linear_equation(self):
         User.objects.create_user(username="student1", password="StrongPass123")
         self.client.login(username="student1", password="StrongPass123")
@@ -823,6 +837,18 @@ class WhatsAppWebhookTests(TestCase):
         response = self.client.post(
             "/whatsapp/",
             {"Body": "What is photosynthesis in biology?", "From": "whatsapp:+111111111"},
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("This application only answers Maths and English questions for now.", body)
+        self.assertIn("It will be upgraded later on. Thank you.", body)
+
+    def test_photosynthesis_variant_returns_scope_message(self):
+        response = self.client.post(
+            "/whatsapp/",
+            {"Body": "what is photosynthess", "From": "whatsapp:+111111111"},
             HTTP_HOST="127.0.0.1",
         )
 

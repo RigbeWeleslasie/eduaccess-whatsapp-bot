@@ -272,7 +272,7 @@ def _is_out_of_scope_question(message):
     if not normalized:
         return False
 
-    unsupported_subject_keywords = {
+    unsupported_subject_keywords = (
         "biology",
         "chemistry",
         "physics",
@@ -289,7 +289,17 @@ def _is_out_of_scope_question(message):
         "religious education",
         "cre",
         "ire",
-    }
+        "photosynth",
+        "cell division",
+        "ecosystem",
+        "atom",
+        "molecule",
+        "electricity",
+        "newton",
+        "acid",
+        "base",
+        "map reading",
+    )
 
     return any(keyword in normalized for keyword in unsupported_subject_keywords)
 
