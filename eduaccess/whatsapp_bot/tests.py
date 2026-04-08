@@ -1,4 +1,5 @@
 from unittest.mock import patch
+import json
 
 from django.contrib.auth.models import User
 from django.test import TestCase
@@ -26,8 +27,11 @@ class PwaTests(TestCase):
     def test_offline_library_page_renders_pack_links(self):
         response = self.client.get("/offline-library/")
 
-        self.assertEqual(response.status_code, 302)
-        self.assertIn("/login/", response["Location"])
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("EduAccess Offline Library", body)
+        self.assertIn("/packs/maths-algebra-basics/", body)
+        self.assertIn("/audio-packs/audio-maths-algebra-basics/player/", body)
 
     def test_offline_library_page_renders_pack_links_for_logged_in_user(self):
         User.objects.create_user(username="student1", password="StrongPass123")
@@ -260,6 +264,69 @@ class PwaTests(TestCase):
         self.assertTrue(question)
         self.assertTrue(answer)
 
+    def test_resolve_topic_from_text_maps_noun_to_parts_of_speech(self):
+        from whatsapp_bot.ai import resolve_topic_from_text
+
+        subject, topic = resolve_topic_from_text("What is a noun?")
+
+        self.assertEqual(subject, "english")
+        self.assertEqual(topic, "parts of speech")
+
+    def test_resolve_topic_from_text_maps_linear_equation_question_correctly(self):
+        from whatsapp_bot.ai import resolve_topic_from_text
+
+        subject, topic = resolve_topic_from_text("Please help me solve this linear equation")
+
+        self.assertEqual(subject, "maths")
+        self.assertEqual(topic, "linear equations")
+
+    @patch("whatsapp_bot.ai._call_gemini")
+    def test_resolve_topic_from_text_uses_gemini_classification_when_valid(self, mock_call_gemini):
+        from whatsapp_bot.ai import resolve_topic_from_text
+
+        mock_call_gemini.return_value = (
+            '{"subject":"english","topic":"parts of speech","confidence":0.96}'
+        )
+
+        subject, topic = resolve_topic_from_text("What is a noun?")
+
+        self.assertEqual(subject, "english")
+        self.assertEqual(topic, "parts of speech")
+
+    @patch("whatsapp_bot.ai._call_gemini")
+    def test_resolve_topic_from_text_falls_back_when_gemini_is_unavailable(self, mock_call_gemini):
+        from whatsapp_bot.ai import resolve_topic_from_text
+
+        mock_call_gemini.side_effect = RuntimeError("Gemini unavailable")
+
+        subject, topic = resolve_topic_from_text("What is a noun?")
+
+        self.assertEqual(subject, "english")
+        self.assertEqual(topic, "parts of speech")
+
+    @patch("whatsapp_bot.ai.request.urlopen")
+    def test_transcribe_audio_bytes_uses_gemini_response_text(self, mock_urlopen):
+        from whatsapp_bot.ai import transcribe_audio_bytes
+
+        mock_response = mock_urlopen.return_value.__enter__.return_value
+        mock_response.read.return_value = json.dumps(
+            {
+                "candidates": [
+                    {
+                        "content": {
+                            "parts": [
+                                {"text": "What is a noun?"}
+                            ]
+                        }
+                    }
+                ]
+            }
+        ).encode("utf-8")
+
+        transcript = transcribe_audio_bytes(b"fake-audio", content_type="audio/ogg")
+
+        self.assertEqual(transcript, "What is a noun?")
+
     @patch("whatsapp_bot.views.get_or_generate_audio_pack")
     @patch("whatsapp_bot.views.get_or_generate_learning_pack")
     @patch("whatsapp_bot.views.generate_question")
@@ -359,6 +426,43 @@ class PwaTests(TestCase):
         self.assertIn("Hi there. I can help you with English and Maths.", body)
         self.assertIn("practice maths", body)
         self.assertIn("practice english", body)
+
+    def test_study_assistant_solves_raw_linear_equation(self):
+        User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+
+        response = self.client.post(
+            "/study-assistant/",
+            {"question": "5x=3x-4"},
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("Linear equation solution", body)
+        self.assertIn("Answer: x = -2", body)
+        self.assertIn("/packs/linear-equations/", body)
+
+    @patch("whatsapp_bot.views.generate_question")
+    def test_new_linear_equation_question_is_not_graded_as_pending_practice_answer(self, mock_generate_question):
+        User.objects.create_user(username="student1", password="StrongPass123")
+        self.client.login(username="student1", password="StrongPass123")
+        mock_generate_question.return_value = (
+            "Solve for x: x + 9 = 14",
+            "x = 5",
+        )
+
+        self.client.post("/study-assistant/", {"question": "Practice maths"})
+        response = self.client.post(
+            "/study-assistant/",
+            {"question": "5x=3x-4"},
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("Linear equation solution", body)
+        self.assertNotIn("Maths Practice Feedback", body)
 
     @patch("whatsapp_bot.views.get_or_generate_audio_pack")
     @patch("whatsapp_bot.views.get_or_generate_learning_pack")
@@ -666,6 +770,42 @@ class WhatsAppWebhookTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("/offline-library/", response.content.decode())
+
+    @patch("whatsapp_bot.views.ask_ai")
+    @patch("whatsapp_bot.views.transcribe_whatsapp_audio")
+    def test_audio_question_is_transcribed_and_answered(self, mock_transcribe_whatsapp_audio, mock_ask_ai):
+        mock_transcribe_whatsapp_audio.return_value = "What is a noun?"
+        mock_ask_ai.return_value = "A noun is a naming word."
+
+        response = self.client.post(
+            "/whatsapp/",
+            {
+                "Body": "",
+                "From": "whatsapp:+111111111",
+                "NumMedia": "1",
+                "MediaUrl0": "https://example.com/audio.ogg",
+                "MediaContentType0": "audio/ogg",
+            },
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("A noun is a naming word.", response.content.decode())
+        mock_transcribe_whatsapp_audio.assert_called_once_with(
+            "https://example.com/audio.ogg",
+            content_type="audio/ogg",
+        )
+        mock_ask_ai.assert_called_once_with("What is a noun?")
+
+    def test_empty_message_without_text_or_audio_prompts_for_supported_input(self):
+        response = self.client.post(
+            "/whatsapp/",
+            {"Body": "", "From": "whatsapp:+111111111", "NumMedia": "0"},
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Please send a text or audio question", response.content.decode())
 
     @patch("whatsapp_bot.views.generate_question")
     def test_practice_english_command_returns_question(self, mock_generate_question):

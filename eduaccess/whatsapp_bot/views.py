@@ -28,6 +28,10 @@ from .ai import (
     get_learning_pack_by_slug_or_topic,
     get_learning_packs,
     get_supported_topics,
+    looks_like_linear_equation_question,
+    resolve_topic_from_text,
+    solve_linear_equation,
+    transcribe_whatsapp_audio,
 )
 
 
@@ -382,16 +386,7 @@ def _build_topic_study_fallback(request, subject, topic):
 
 
 def _detect_study_topic(message):
-    normalized = message.strip().lower()
-    if not normalized:
-        return None, None
-
-    for subject in ("maths", "english"):
-        for topic in get_supported_topics(subject=subject):
-            if topic in normalized:
-                return subject, topic
-
-    return None, None
+    return resolve_topic_from_text(message)
 
 
 def _build_practice_question_reply(request, state, subject):
@@ -474,6 +469,22 @@ def _build_greeting_reply(request):
     )
 
 
+def _extract_audio_question_from_request(request):
+    try:
+        num_media = int(request.POST.get("NumMedia", "0") or "0")
+    except ValueError:
+        num_media = 0
+
+    for index in range(num_media):
+        content_type = (request.POST.get(f"MediaContentType{index}", "") or "").strip().lower()
+        media_url = (request.POST.get(f"MediaUrl{index}", "") or "").strip()
+        if content_type.startswith("audio/") and media_url:
+            transcript = transcribe_whatsapp_audio(media_url, content_type=content_type)
+            return transcript.strip()
+
+    return None
+
+
 def _build_tutor_reply(request, incoming_msg, practice_state):
     normalized = incoming_msg.strip().lower()
     practice_subject = None
@@ -523,12 +534,20 @@ def _build_tutor_reply(request, incoming_msg, practice_state):
                 )
             return "Sorry, I couldn't create a practice question right now. Please try again in a moment."
 
-    if practice_state.get("pending") and _looks_like_new_learning_request(incoming_msg):
+    if practice_state.get("pending") and (
+        _looks_like_new_learning_request(incoming_msg)
+        or looks_like_linear_equation_question(incoming_msg)
+    ):
         practice_state["pending"] = None
 
     practice_feedback = _build_practice_feedback_reply(practice_state, incoming_msg)
     if practice_feedback:
         return practice_feedback
+
+    solved_equation = solve_linear_equation(incoming_msg)
+    if solved_equation:
+        _remember_topic(practice_state, "linear equations", "maths")
+        return f"{solved_equation}{_build_topic_resource_lines(request, 'maths', 'linear equations')}"
 
     if normalized.startswith("pack "):
         query = normalized[5:].strip()
@@ -679,16 +698,31 @@ def pwa_manifest(request):
 
 def service_worker(request):
     offline_urls = [
+        "/",
+        "/login/",
+        "/register/",
         "/offline-library/",
+        "/offline-library/?subject=maths",
+        "/offline-library/?subject=english",
         "/offline-fallback/",
         static("whatsapp_bot/icons/icon-192.png"),
         static("whatsapp_bot/icons/icon-512.png"),
     ]
+
+    for pack in get_learning_packs():
+        offline_urls.append(f"/packs/{pack['slug']}/")
+
+    for pack in get_audio_packs():
+        offline_urls.append(f"/audio-packs/{pack['slug']}/player/")
+        offline_urls.append(f"/audio-packs/{pack['slug']}/transcript/")
+
+    offline_urls = list(dict.fromkeys(offline_urls))
+
     response = render(
         request,
         "whatsapp_bot/service-worker.js",
         {
-            "cache_name": "eduaccess-pwa-v1",
+            "cache_name": "eduaccess-pwa-v2",
             "offline_urls": offline_urls,
         },
         content_type="application/javascript; charset=utf-8",
@@ -701,14 +735,15 @@ def offline_fallback_page(request):
     return render(request, "whatsapp_bot/offline_fallback.html")
 
 
-@login_required(login_url=reverse_lazy("login"))
 def offline_library_page(request):
     subject = request.GET.get("subject", "").strip().lower() or None
     if subject not in {None, "english", "maths"}:
         subject = None
 
-    _, practice_state = _load_user_practice_state(request.user)
-    recent_entries = _recent_topic_library_entries(request, practice_state, subject=subject)
+    recent_entries = []
+    if request.user.is_authenticated:
+        _, practice_state = _load_user_practice_state(request.user)
+        recent_entries = _recent_topic_library_entries(request, practice_state, subject=subject)
     static_entries = _offline_library_entries(request, subject=subject)
     recent_topics = {entry["topic"].strip().lower() for entry in recent_entries}
     entries = [
@@ -819,7 +854,6 @@ def study_assistant_api(request):
     return JsonResponse({"reply": reply})
 
 
-@login_required(login_url=reverse_lazy("login"))
 def learning_pack_download(request, slug):
     try:
         pack = get_or_generate_learning_pack(slug)
@@ -833,7 +867,6 @@ def learning_pack_download(request, slug):
     return response
 
 
-@login_required(login_url=reverse_lazy("login"))
 def audio_pack_transcript_download(request, slug):
     lookup_key = slug[6:] if slug.startswith("audio-") else slug
     try:
@@ -848,7 +881,6 @@ def audio_pack_transcript_download(request, slug):
     return response
 
 
-@login_required(login_url=reverse_lazy("login"))
 def audio_pack_player(request, slug):
     lookup_key = slug[6:] if slug.startswith("audio-") else slug
     try:
@@ -881,16 +913,18 @@ def whatsapp_webhook(request):
         msg = resp.message()
         try:
             progress, practice_state = _load_whatsapp_practice_state(phone_number)
+            if not incoming_msg:
+                incoming_msg = _extract_audio_question_from_request(request) or ""
             if incoming_msg:
                 reply = _build_tutor_reply(request, incoming_msg, practice_state)
                 _save_whatsapp_practice_state(progress, practice_state)
             else:
-                reply = "Hi! Please send a message so I can help you."
+                reply = "Hi! Please send a text or audio question so I can help you."
         except Exception:
             print("[whatsapp_webhook] error while processing request")
             traceback.print_exc()
             reply = (
-                "Sorry, I could not process your WhatsApp message right now. "
+                "Sorry, I could not process your WhatsApp text or audio message right now. "
                 "Please try again in a moment."
             )
 

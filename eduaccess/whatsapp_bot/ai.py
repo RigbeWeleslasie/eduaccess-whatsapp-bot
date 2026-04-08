@@ -3,9 +3,12 @@ import json
 import os
 import random
 import re
+import base64
+from fractions import Fraction
 from pathlib import Path
 from urllib import error, request
 
+import requests
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -13,6 +16,8 @@ load_dotenv(BASE_DIR / ".env", override=True)
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
 
 LOCAL_LEARNING_PACKS = [
     {
@@ -619,36 +624,239 @@ def ask_ai(question):
     return _call_gemini(question, system_prompt="You are a helpful tutor.")
 
 
+def _extension_from_content_type(content_type):
+    content_type = (content_type or "").lower()
+    mapping = {
+        "audio/ogg": ".ogg",
+        "audio/opus": ".ogg",
+        "audio/mpeg": ".mp3",
+        "audio/mp3": ".mp3",
+        "audio/mp4": ".mp4",
+        "audio/aac": ".aac",
+        "audio/wav": ".wav",
+        "audio/x-wav": ".wav",
+        "audio/webm": ".webm",
+    }
+    return mapping.get(content_type, ".audio")
+
+
+def download_whatsapp_media(media_url):
+    if not media_url:
+        raise ValueError("Missing media URL.")
+
+    auth = None
+    if TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN:
+        auth = (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+
+    response = requests.get(media_url, auth=auth, timeout=30)
+    response.raise_for_status()
+    return response.content
+
+
+def transcribe_audio_bytes(audio_bytes, content_type=None):
+    if not GEMINI_API_KEY:
+        raise RuntimeError("GEMINI_API_KEY is not set.")
+    if not audio_bytes:
+        raise ValueError("Audio file is empty.")
+
+    mime_type = (content_type or "").strip().lower() or "audio/ogg"
+    payload = {
+        "contents": [
+            {
+                "parts": [
+                    {
+                        "text": (
+                            "Transcribe this audio message into plain text. "
+                            "Return only the transcript with no extra commentary."
+                        )
+                    },
+                    {
+                        "inline_data": {
+                            "mime_type": mime_type,
+                            "data": base64.b64encode(audio_bytes).decode("utf-8"),
+                        }
+                    },
+                ]
+            }
+        ]
+    }
+    url = (
+        "https://generativelanguage.googleapis.com/v1beta/models/"
+        f"{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
+    )
+    req = request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+
+    try:
+        with request.urlopen(req, timeout=60) as response:
+            response_data = json.loads(response.read().decode("utf-8"))
+    except error.HTTPError as exc:
+        error_body = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"Gemini audio transcription error {exc.code}: {error_body}") from exc
+    except error.URLError as exc:
+        raise RuntimeError(f"Gemini audio transcription network error: {exc.reason}") from exc
+
+    transcript = _extract_text(response_data).strip()
+    if not transcript:
+        raise RuntimeError(f"Gemini returned no transcription text: {response_data}")
+    return transcript
+
+
+def transcribe_whatsapp_audio(media_url, content_type=None):
+    audio_bytes = download_whatsapp_media(media_url)
+    return transcribe_audio_bytes(audio_bytes, content_type=content_type)
+
+
+def _fraction_to_display(value):
+    if value.denominator == 1:
+        return str(value.numerator)
+    return str(float(value))
+
+
+def _parse_fraction(value):
+    try:
+        return Fraction(value)
+    except (ValueError, ZeroDivisionError):
+        raise ValueError(f"Invalid number: {value}")
+
+
+def _parse_linear_expression(expression, variable):
+    normalized = expression.replace(" ", "").replace("*", "").replace("−", "-")
+    if not normalized:
+        raise ValueError("Empty expression")
+
+    terms = re.findall(r"[+-]?[^+-]+", normalized)
+    if not terms:
+        raise ValueError("No terms found")
+
+    coefficient = Fraction(0)
+    constant = Fraction(0)
+
+    for term in terms:
+        if variable in term:
+            if term.count(variable) != 1:
+                raise ValueError("Unsupported variable term")
+            if term.endswith(f"{variable}") and "/" not in term:
+                factor = term[:-1]
+                if factor in {"", "+"}:
+                    coefficient += Fraction(1)
+                elif factor == "-":
+                    coefficient -= Fraction(1)
+                else:
+                    coefficient += _parse_fraction(factor)
+                continue
+
+            division_match = re.fullmatch(
+                rf"([+-]?)(?:(\d+(?:\.\d+)?)?)?{re.escape(variable)}/(\d+(?:\.\d+)?)",
+                term,
+            )
+            if division_match:
+                sign, numerator, denominator = division_match.groups()
+                signed_numerator = numerator or "1"
+                if sign == "-":
+                    signed_numerator = f"-{signed_numerator}"
+                coefficient += _parse_fraction(signed_numerator) / _parse_fraction(denominator)
+                continue
+
+            raise ValueError("Unsupported linear term")
+
+        constant += _parse_fraction(term)
+
+    return coefficient, constant
+
+
+def looks_like_linear_equation_question(question):
+    normalized = question.strip().lower()
+    if normalized.count("=") != 1:
+        return False
+
+    variable_matches = re.findall(r"[a-z]", normalized)
+    unique_variables = set(variable_matches)
+    if len(unique_variables) != 1:
+        return False
+
+    if re.fullmatch(r"\s*[a-z]\s*=\s*[-+]?\d+(?:\.\d+)?\s*", normalized):
+        return False
+    if re.fullmatch(r"\s*[-+]?\d+(?:\.\d+)?\s*=\s*[a-z]\s*", normalized):
+        return False
+
+    return bool(re.search(r"\d", normalized))
+
+
+def solve_linear_equation(question):
+    if not looks_like_linear_equation_question(question):
+        return None
+
+    normalized = question.strip().lower().replace("^1", "")
+    variable = re.findall(r"[a-z]", normalized)[0]
+    left_side, right_side = [part.strip() for part in normalized.split("=", 1)]
+
+    try:
+        left_coefficient, left_constant = _parse_linear_expression(left_side, variable)
+        right_coefficient, right_constant = _parse_linear_expression(right_side, variable)
+    except ValueError:
+        return None
+
+    variable_coefficient = left_coefficient - right_coefficient
+    constant_value = right_constant - left_constant
+
+    if variable_coefficient == 0:
+        if constant_value == 0:
+            return (
+                "This linear equation has infinitely many solutions because both sides simplify to the same expression."
+            )
+        return "This linear equation has no solution because the variable terms cancel but the constants do not match."
+
+    answer = constant_value / variable_coefficient
+    return (
+        "Linear equation solution\n"
+        f"Equation: {question.strip()}\n"
+        f"Collect like terms: {_fraction_to_display(variable_coefficient)}{variable} = {_fraction_to_display(constant_value)}\n"
+        f"Answer: {variable} = {_fraction_to_display(answer)}"
+    )
+
+
 def build_local_tutor_answer(question):
     normalized = re.sub(r"\s+", " ", question.strip().lower())
     if not normalized:
         return None
 
+    solved_equation = solve_linear_equation(question)
+    if solved_equation:
+        return {
+            "subject": "maths",
+            "topic": "linear equations",
+            "answer": solved_equation,
+        }
+
     for entry in LOCAL_TUTOR_KNOWLEDGE:
-        if any(keyword in normalized for keyword in entry["keywords"]):
+        if any(_keyword_in_text(keyword, normalized) for keyword in entry["keywords"]):
             return {
                 "subject": entry["subject"],
                 "topic": entry["topic"],
                 "answer": entry["answer"],
             }
 
-    for subject in ("maths", "english"):
-        for topic in get_supported_topics(subject=subject):
-            if topic in normalized:
-                topic_title = _titleize_topic(topic)
-                if subject == "maths":
-                    answer = (
-                        f"{topic_title} is a Maths topic that becomes easier when you learn the main rule, "
-                        "study one worked example, and then practise similar questions step by step. "
-                        "Start by identifying what the question is asking, choose the correct rule, and check each stage of your working carefully."
-                    )
-                else:
-                    answer = (
-                        f"{topic_title} is an English topic that is best learnt through clear rules, examples, "
-                        "and sentence practice. Start by understanding the pattern, compare correct and incorrect examples, "
-                        "and then write a few sentences of your own."
-                    )
-                return {"subject": subject, "topic": topic, "answer": answer}
+    resolved_subject, resolved_topic = resolve_topic_from_text(question)
+    if resolved_topic:
+        topic_title = _titleize_topic(resolved_topic)
+        if resolved_subject == "maths":
+            answer = (
+                f"{topic_title} is a Maths topic that becomes easier when you learn the main rule, "
+                "study one worked example, and then practise similar questions step by step. "
+                "Start by identifying what the question is asking, choose the correct rule, and check each stage of your working carefully."
+            )
+        else:
+            answer = (
+                f"{topic_title} is an English topic that is best learnt through clear rules, examples, "
+                "and sentence practice. Start by understanding the pattern, compare correct and incorrect examples, "
+                "and then write a few sentences of your own."
+            )
+        return {"subject": resolved_subject, "topic": resolved_topic, "answer": answer}
 
     inferred_subject = _infer_subject(normalized)
     if inferred_subject == "maths":
@@ -686,6 +894,116 @@ def _titleize_topic(query):
 def _normalize_topic_key(topic):
     normalized = topic.strip().lower()
     return TOPIC_ALIASES.get(normalized, normalized)
+
+
+def _keyword_in_text(keyword, text):
+    escaped = re.escape(keyword)
+    pattern = rf"(?<![a-z0-9]){escaped}(?![a-z0-9])"
+    return re.search(pattern, text) is not None
+
+
+def _resolve_topic_from_text_local(question, subject=None):
+    normalized = re.sub(r"\s+", " ", question.strip().lower())
+    if not normalized:
+        return None, None
+
+    candidate_subjects = (subject,) if subject else ("maths", "english")
+
+    for entry in LOCAL_TUTOR_KNOWLEDGE:
+        entry_subject = entry.get("subject")
+        if entry_subject not in candidate_subjects:
+            continue
+        if any(_keyword_in_text(keyword, normalized) for keyword in entry.get("keywords", [])):
+            return entry_subject, _normalize_topic_key(entry["topic"])
+
+    for current_subject in candidate_subjects:
+        for topic in get_supported_topics(subject=current_subject):
+            normalized_topic = _normalize_topic_key(topic)
+            if _keyword_in_text(normalized_topic, normalized):
+                return current_subject, normalized_topic
+
+    return None, None
+
+
+def _extract_topic_resolution_from_text(payload_text):
+    try:
+        parsed = json.loads(payload_text)
+    except json.JSONDecodeError:
+        json_match = re.search(r"\{.*\}", payload_text, re.DOTALL)
+        if not json_match:
+            return None, None, None
+        try:
+            parsed = json.loads(json_match.group(0))
+        except json.JSONDecodeError:
+            return None, None, None
+
+    if not isinstance(parsed, dict):
+        return None, None, None
+
+    subject = (parsed.get("subject") or "").strip().lower() or None
+    topic = parsed.get("topic")
+    confidence = parsed.get("confidence")
+
+    if isinstance(topic, str):
+        topic = _normalize_topic_key(topic)
+    else:
+        topic = None
+
+    try:
+        confidence = float(confidence)
+    except (TypeError, ValueError):
+        confidence = None
+
+    if subject not in {"maths", "english"}:
+        subject = None
+
+    return subject, topic, confidence
+
+
+def _resolve_topic_from_text_with_gemini(question, subject=None):
+    candidate_subjects = [subject] if subject else ["maths", "english"]
+    supported_topics = []
+    for current_subject in candidate_subjects:
+        for topic in get_supported_topics(subject=current_subject):
+            normalized_topic = _normalize_topic_key(topic)
+            if normalized_topic not in supported_topics:
+                supported_topics.append(normalized_topic)
+
+    prompt = (
+        "Classify the student's question into one supported school topic.\n"
+        f"Question: {question.strip()}\n"
+        f"Allowed subjects: {', '.join(candidate_subjects)}\n"
+        f"Allowed topics: {', '.join(supported_topics)}\n"
+        'Return JSON only in this exact shape: {"subject":"...","topic":"...","confidence":0.0}\n'
+        "Use only an allowed topic. If unsure, set topic to an empty string and confidence to 0."
+    )
+    system_prompt = (
+        "You classify student questions to the closest supported topic for resource linking. "
+        "Return only valid JSON with no markdown."
+    )
+
+    try:
+        response_text = _call_gemini(prompt, system_prompt=system_prompt)
+    except Exception:
+        return None, None
+
+    resolved_subject, resolved_topic, confidence = _extract_topic_resolution_from_text(response_text)
+    if not resolved_subject or not resolved_topic or confidence is None or confidence < 0.6:
+        return None, None
+
+    if resolved_subject not in candidate_subjects:
+        return None, None
+    if resolved_topic not in supported_topics:
+        return None, None
+
+    return resolved_subject, resolved_topic
+
+
+def resolve_topic_from_text(question, subject=None):
+    resolved_subject, resolved_topic = _resolve_topic_from_text_with_gemini(question, subject=subject)
+    if resolved_topic:
+        return resolved_subject, resolved_topic
+    return _resolve_topic_from_text_local(question, subject=subject)
 
 
 def _infer_subject(query):
@@ -930,14 +1248,14 @@ def generate_audio_pack(topic, subject=None, slug=None):
 
 
 def get_or_generate_learning_pack(query, subject=None):
-    pack = get_learning_pack_by_slug_or_topic(query)
+    pack = get_learning_pack_by_slug_or_topic(query, subject=subject)
     if pack:
         return pack
     return generate_learning_pack(query, subject=subject)
 
 
 def get_or_generate_audio_pack(query, subject=None):
-    pack = get_audio_pack_by_slug_or_topic(query)
+    pack = get_audio_pack_by_slug_or_topic(query, subject=subject)
     if pack:
         return pack
     return generate_audio_pack(query, subject=subject)
@@ -1006,23 +1324,27 @@ def get_audio_packs(subject=None):
     return [pack for pack in LOCAL_AUDIO_PACKS if pack["subject"] == subject]
 
 
-def get_learning_pack_by_slug_or_topic(query):
+def get_learning_pack_by_slug_or_topic(query, subject=None):
     lowered_query = _normalize_topic_key(query)
     generated_pack = GENERATED_LEARNING_PACKS.get(lowered_query)
-    if generated_pack:
+    if generated_pack and (not subject or generated_pack.get("subject") == subject):
         return generated_pack
     for pack in LOCAL_LEARNING_PACKS:
+        if subject and pack.get("subject") != subject:
+            continue
         if pack["slug"] == lowered_query or _normalize_topic_key(pack["topic"]) == lowered_query:
             return pack
     return None
 
 
-def get_audio_pack_by_slug_or_topic(query):
+def get_audio_pack_by_slug_or_topic(query, subject=None):
     lowered_query = _normalize_topic_key(query)
     generated_pack = GENERATED_AUDIO_PACKS.get(lowered_query)
-    if generated_pack:
+    if generated_pack and (not subject or generated_pack.get("subject") == subject):
         return generated_pack
     for pack in LOCAL_AUDIO_PACKS:
+        if subject and pack.get("subject") != subject:
+            continue
         if pack["slug"] == lowered_query or _normalize_topic_key(pack["topic"]) == lowered_query:
             return pack
     return None
