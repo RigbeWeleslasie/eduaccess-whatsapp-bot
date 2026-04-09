@@ -20,122 +20,48 @@ GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
 
+TOPIC_CATALOG = {
+    "english": [
+        "passive voice",
+        "reported speech",
+        "adjectives",
+        "tenses",
+        "vocabulary",
+        "parts of speech",
+        "comprehension",
+        "essay writing",
+        "letter writing",
+        "conjunctions",
+        "direct and indirect speech",
+    ],
+    "maths": [
+        "fractions",
+        "algebra",
+        "geometry",
+        "calculus",
+        "linear equations",
+        "simultaneous equations",
+        "quadratic equations",
+        "percentages",
+        "ratios",
+        "indices",
+        "trigonometry",
+    ],
+}
+
 LOCAL_LEARNING_PACKS = [
     {
         "slug": "maths-algebra-basics",
         "subject": "maths",
         "topic": "Algebra",
         "title": "Algebra Basics Pack",
-        "summary": "A full beginner algebra lesson with explanations, examples, drills, review, and exam-style practice.",
+        "summary": "Starter algebra pack kept as an offline fallback.",
         "content": (
             "ALGEBRA BASICS STUDY PACK\n\n"
-            "1. LEARNING GOALS\n"
-            "- Understand what variables, expressions, and equations mean.\n"
-            "- Solve simple one-step and two-step equations.\n"
-            "- Check whether an answer is correct.\n"
-            "- Translate simple word statements into algebra.\n\n"
-            "2. WHY ALGEBRA MATTERS\n"
-            "Algebra is a way of thinking about unknown values. Instead of writing a long sentence every time, we use letters to represent numbers we do not yet know. "
-            "This helps in arithmetic, science, business, measurements, and problem solving. If you can solve an equation, you can find a missing age, a missing length, a cost, a speed, or a number pattern.\n\n"
-            "3. KEY IDEAS\n"
-            "A variable is a letter such as x or y that stands for an unknown number.\n"
-            "An expression is a maths phrase such as 3x + 2.\n"
-            "An equation says two expressions are equal, for example x + 7 = 15.\n"
-            "To solve an equation, keep the equation balanced by doing the same operation to both sides.\n\n"
-            "4. VOCABULARY\n"
-            "- Variable: a symbol for an unknown value.\n"
-            "- Coefficient: the number multiplying a variable, for example 4 in 4x.\n"
-            "- Constant: a fixed number, for example 9 in x + 9.\n"
-            "- Solve: find the value of the variable.\n\n"
-            "5. EXPRESSIONS AND EQUATIONS\n"
-            "Expression examples:\n"
-            "- 2x + 3\n"
-            "- y - 5\n"
-            "- 7a\n\n"
-            "Equation examples:\n"
-            "- x + 7 = 15\n"
-            "- 3y = 18\n"
-            "- 2m - 1 = 9\n\n"
-            "An expression has no equals sign. An equation has an equals sign.\n\n"
-            "6. BALANCE METHOD\n"
-            "Think of an equation as a balance scale. If you add, subtract, multiply, or divide one side, you must do the same to the other side. "
-            "That is how you keep the equation true.\n\n"
-            "7. WORKED EXAMPLE 1\n"
-            "Solve: x + 7 = 15\n"
-            "Step 1: Subtract 7 from both sides.\n"
-            "x + 7 - 7 = 15 - 7\n"
-            "x = 8\n"
-            "Check: 8 + 7 = 15, so the answer is correct.\n\n"
-            "8. WORKED EXAMPLE 2\n"
-            "Solve: 3x = 21\n"
-            "Step 1: Divide both sides by 3.\n"
-            "3x / 3 = 21 / 3\n"
-            "x = 7\n"
-            "Check: 3 x 7 = 21.\n\n"
-            "9. WORKED EXAMPLE 3\n"
-            "Solve: 2x + 5 = 17\n"
-            "Step 1: Subtract 5 from both sides.\n"
-            "2x = 12\n"
-            "Step 2: Divide both sides by 2.\n"
-            "x = 6\n"
-            "Check: 2(6) + 5 = 17.\n\n"
-            "10. WORKED EXAMPLE 4\n"
-            "Solve: x/4 = 3\n"
-            "Step 1: Multiply both sides by 4.\n"
-            "x = 12\n"
-            "Check: 12/4 = 3.\n\n"
-            "11. WORD STATEMENTS INTO ALGEBRA\n"
-            "Translate these statements:\n"
-            "- A number plus 5 is written as x + 5.\n"
-            "- Three times a number is written as 3x.\n"
-            "- A number reduced by 8 is written as x - 8.\n"
-            "- Half of a number is written as x/2.\n\n"
-            "12. COMMON MISTAKES\n"
-            "- Changing only one side of the equation.\n"
-            "- Forgetting to reverse addition with subtraction or multiplication with division.\n"
-            "- Not checking the final answer in the original equation.\n"
-            "- Mixing expressions and equations.\n"
-            "- Forgetting that 3x means 3 multiplied by x.\n\n"
-            "13. GUIDED PRACTICE\n"
-            "a) x - 4 = 10\n"
-            "b) 5x = 35\n"
-            "c) y + 12 = 20\n"
-            "d) 4m - 3 = 13\n"
-            "e) n/5 = 6\n"
-            "f) 3p + 2 = 14\n\n"
-            "14. ANSWERS TO GUIDED PRACTICE\n"
-            "a) x = 14\n"
-            "b) x = 7\n"
-            "c) y = 8\n"
-            "d) m = 4\n"
-            "e) n = 30\n"
-            "f) p = 4\n\n"
-            "15. EXAM-STYLE PRACTICE\n"
-            "1) Solve 7x = 49.\n"
-            "2) Solve y - 9 = 16.\n"
-            "3) Solve 2a + 3 = 11.\n"
-            "4) A number increased by 6 is 14. Find the number.\n"
-            "5) Amina buys 3 pencils at x shillings each and pays 24 shillings. Form an equation and solve it.\n\n"
-            "16. EXAM-STYLE ANSWERS\n"
-            "1) x = 7\n"
-            "2) y = 25\n"
-            "3) a = 4\n"
-            "4) x + 6 = 14, so x = 8\n"
-            "5) 3x = 24, so x = 8 shillings\n\n"
-            "17. REVISION NOTES\n"
-            "- Look at the operation near the variable.\n"
-            "- Undo that operation using the opposite operation.\n"
-            "- Keep both sides balanced.\n"
-            "- Check by substitution.\n\n"
-            "18. SELF-ASSESSMENT\n"
-            "Ask yourself:\n"
-            "- Can I tell the difference between an expression and an equation?\n"
-            "- Can I solve x + 5 = 12 without help?\n"
-            "- Can I solve 3x = 18 without help?\n"
-            "- Can I solve 2x + 1 = 9 step by step?\n"
-            "If you answered no to any of these, repeat the worked examples and guided practice.\n\n"
-            "19. SUMMARY\n"
-            "Algebra helps us find unknown values. The main rule is to keep both sides balanced, use opposite operations carefully, and check the answer at the end."
+            "This offline fallback pack introduces variables, expressions, equations, and the balance method.\n\n"
+            "Worked example: x + 7 = 15, so x = 8.\n"
+            "Worked example: 3x = 21, so x = 7.\n\n"
+            "Revision tip: keep both sides balanced and always check your answer."
         ),
     },
     {
@@ -143,101 +69,13 @@ LOCAL_LEARNING_PACKS = [
         "subject": "english",
         "topic": "Passive voice",
         "title": "Passive Voice Pack",
-        "summary": "A full grammar lesson on passive voice with clear rules, tense patterns, examples, corrections, and practice.",
+        "summary": "Starter passive voice pack kept as an offline fallback.",
         "content": (
             "PASSIVE VOICE STUDY PACK\n\n"
-            "1. LEARNING GOALS\n"
-            "- Understand the difference between active and passive voice.\n"
-            "- Change active sentences into passive sentences correctly.\n"
-            "- Choose the correct form of the verb 'be' and the past participle.\n\n"
-            "2. WHY THIS TOPIC MATTERS\n"
-            "Passive voice is useful in school writing, reports, news writing, science procedures, and formal English. "
-            "It helps the writer focus on the action or the result instead of the person doing the action.\n\n"
-            "3. KEY IDEA\n"
-            "In active voice, the subject does the action.\n"
-            "In passive voice, the receiver of the action becomes the focus.\n\n"
-            "4. STRUCTURE\n"
-            "Active: subject + verb + object\n"
-            "Passive: object + form of 'be' + past participle + by + subject\n\n"
-            "5. MAIN EXAMPLE\n"
-            "Active: The students solved the problem.\n"
-            "Passive: The problem was solved by the students.\n\n"
-            "6. MORE EXAMPLES\n"
-            "Active: The chef cooked the meal.\n"
-            "Passive: The meal was cooked by the chef.\n\n"
-            "Active: The teacher marks the books.\n"
-            "Passive: The books are marked by the teacher.\n\n"
-            "7. STEP-BY-STEP METHOD\n"
-            "Step 1: Find the object in the active sentence.\n"
-            "Step 2: Move that object to the beginning.\n"
-            "Step 3: Choose the correct form of the verb 'be'.\n"
-            "Step 4: Use the past participle of the main verb.\n"
-            "Step 5: Add 'by' plus the doer when necessary.\n\n"
-            "8. TENSE GUIDE\n"
-            "Present simple active: The teacher marks the books.\n"
-            "Present simple passive: The books are marked by the teacher.\n\n"
-            "Past simple active: The teacher marked the books.\n"
-            "Past simple passive: The books were marked by the teacher.\n\n"
-            "Future active: The teacher will mark the books.\n"
-            "Future passive: The books will be marked by the teacher.\n\n"
-            "9. WHEN TO USE PASSIVE VOICE\n"
-            "- When the action is more important than the doer.\n"
-            "- When the doer is unknown.\n"
-            "- In formal or report writing.\n\n"
-            "10. WHEN NOT TO USE IT TOO MUCH\n"
-            "Do not overuse passive voice in ordinary speaking and writing, because too much passive voice can make writing weak or unclear. "
-            "Use it when it serves a purpose.\n\n"
-            "11. COMMON MISTAKES\n"
-            "- Forgetting the correct form of 'be'.\n"
-            "- Using the wrong past participle.\n"
-            "- Leaving out the object from the active sentence.\n"
-            "- Changing a sentence that has no object.\n"
-            "- Writing 'by' when it is not needed.\n\n"
-            "12. CORRECTION PRACTICE\n"
-            "Wrong: The food cooked by the chef.\n"
-            "Correct: The food was cooked by the chef.\n\n"
-            "Wrong: The room is clean by the class.\n"
-            "Correct: The room is cleaned by the class.\n\n"
-            "13. GUIDED PRACTICE\n"
-            "Change these to passive voice:\n"
-            "a) The class cleaned the room.\n"
-            "b) The farmer planted the maize.\n"
-            "c) The police arrested the thief.\n"
-            "d) The mechanic repaired the car.\n"
-            "e) The nurse helped the patient.\n\n"
-            "14. ANSWERS TO GUIDED PRACTICE\n"
-            "a) The room was cleaned by the class.\n"
-            "b) The maize was planted by the farmer.\n"
-            "c) The thief was arrested by the police.\n"
-            "d) The car was repaired by the mechanic.\n"
-            "e) The patient was helped by the nurse.\n\n"
-            "15. EXAM-STYLE PRACTICE\n"
-            "1) Change to passive voice: The pupils opened the windows.\n"
-            "2) Change to passive voice: The workers built the bridge.\n"
-            "3) Change to passive voice: The head teacher will announce the results.\n"
-            "4) Rewrite in active voice: The homework was completed by Musa.\n"
-            "5) Rewrite in active voice: The song was sung by the choir.\n\n"
-            "16. EXAM-STYLE ANSWERS\n"
-            "1) The windows were opened by the pupils.\n"
-            "2) The bridge was built by the workers.\n"
-            "3) The results will be announced by the head teacher.\n"
-            "4) Musa completed the homework.\n"
-            "5) The choir sang the song.\n\n"
-            "17. REVISION NOTES\n"
-            "- Find the object first.\n"
-            "- Move it to the front.\n"
-            "- Use the correct form of 'be'.\n"
-            "- Add the past participle.\n"
-            "- Add the doer only when necessary.\n\n"
-            "18. SELF-ASSESSMENT\n"
-            "Ask yourself:\n"
-            "- Can I explain active voice and passive voice?\n"
-            "- Can I change a past tense sentence into passive voice?\n"
-            "- Can I change a future tense sentence into passive voice?\n"
-            "- Can I recognise when passive voice is useful?\n"
-            "If you answered no to some of these, go back to the examples and guided practice.\n\n"
-            "19. SUMMARY\n"
-            "Passive voice is formed with a form of 'be' plus a past participle. It is useful when the receiver of the action is the main focus, especially in formal and informational writing."
+            "This offline fallback pack explains that passive voice focuses on the receiver of the action.\n\n"
+            "Pattern: object + form of be + past participle.\n"
+            "Example: The chef cooked the meal. -> The meal was cooked by the chef.\n\n"
+            "Revision tip: identify the object first, then choose the correct form of be."
         ),
     },
 ]
@@ -248,20 +86,10 @@ LOCAL_AUDIO_PACKS = [
         "subject": "maths",
         "topic": "Algebra",
         "title": "Algebra Audio Lesson",
-        "summary": "A longer spoken-style lesson on variables, equations, balancing, worked examples, and revision tips.",
+        "summary": "Short offline algebra audio transcript fallback.",
         "transcript": (
-            "Welcome to this algebra lesson. Algebra helps us find unknown numbers by using letters such as x and y. "
-            "A variable is a letter that stands for a number we do not yet know. "
-            "An expression is a maths phrase such as 2x plus 3, while an equation includes an equals sign. "
-            "An equation shows that two sides are equal, for example x plus 7 equals 15. "
-            "To solve an equation, we must keep both sides balanced, just like a balance scale. "
-            "If the equation is x plus 7 equals 15, we subtract 7 from both sides, and we get x equals 8. "
-            "If the equation is 3x equals 21, we divide both sides by 3, and we get x equals 7. "
-            "For a two-step equation such as 2x plus 5 equals 17, first subtract 5 from both sides to get 2x equals 12, then divide by 2 to get x equals 6. "
-            "Another example is x divided by 4 equals 3. In that case, multiply both sides by 4 to get x equals 12. "
-            "Always check your answer by putting it back into the original equation. "
-            "Common mistakes include changing only one side of the equation or forgetting to use the opposite operation. "
-            "Algebra becomes easier when you work step by step, keep both sides equal, and practise a few examples every day."
+            "Welcome to this algebra lesson. Algebra uses letters to represent unknown numbers. "
+            "To solve equations, keep both sides balanced and reverse the operation step by step."
         ),
     },
     {
@@ -269,19 +97,10 @@ LOCAL_AUDIO_PACKS = [
         "subject": "english",
         "topic": "Passive voice",
         "title": "Passive Voice Audio Lesson",
-        "summary": "A longer spoken explanation of passive voice, tense patterns, usage, and common mistakes.",
+        "summary": "Short offline passive voice audio transcript fallback.",
         "transcript": (
-            "Welcome to this passive voice lesson. "
-            "In active voice, the subject performs the action, as in the students solved the problem. "
-            "In passive voice, the receiver of the action becomes the focus, so we say the problem was solved by the students. "
-            "To form the passive voice, use the correct form of the verb be and then add the past participle. "
-            "For example, the chef cooked the meal becomes the meal was cooked by the chef. "
-            "In the present tense, we may say the books are marked by the teacher. In the past tense, we say the books were marked by the teacher. "
-            "In the future tense, we can say the results will be announced by the head teacher. "
-            "We often use passive voice when the action is more important than the doer, or when the doer is unknown. "
-            "When changing a sentence, first identify the object in the active sentence, move it to the front, then choose the correct form of be, and finally use the past participle. "
-            "Common mistakes include forgetting the verb be, using the wrong verb form, or trying to change a sentence that has no object. "
-            "Passive voice is useful in formal writing, reports, and scientific explanations, but it should be used clearly and purposefully."
+            "Welcome to this passive voice lesson. Passive voice focuses on the receiver of the action. "
+            "A common pattern is object plus a form of be plus the past participle."
         ),
     },
 ]
@@ -290,23 +109,13 @@ LOCAL_PRACTICE_QUESTIONS = {
     "maths": [
         ("Solve for x: x + 9 = 14", "x = 5"),
         ("Solve for y: 3y = 18", "y = 6"),
-        ("Solve for m: 2m + 5 = 13", "m = 4"),
-        ("Solve for x: x/4 = 3", "x = 12"),
-        ("A number increased by 7 is 19. Find the number.", "x = 12"),
-        ("Solve for p: 5p - 10 = 15", "p = 5"),
     ],
     "english": [
-        ("Rewrite this sentence using the correct punctuation: i like reading novels and poems", "I like reading novels and poems."),
-        ("Choose the correct word: The students _____ going to the library. (is/are)", "are"),
         ("Write the plural form of 'child'.", "children"),
         ("Change to passive voice: The chef cooked the meal.", "The meal was cooked by the chef."),
-        ("Give one synonym for 'happy'.", "joyful"),
-        ("Write one sentence using the past tense of the verb 'go'.", "Yesterday I went to school."),
     ],
     "general": [
         ("Solve for x: x + 7 = 15", "x = 8"),
-        ("Change to passive voice: The farmer planted the maize.", "The maize was planted by the farmer."),
-        ("Solve for x: 4x = 20", "x = 5"),
         ("Change to active voice: The song was sung by the choir.", "The choir sang the song."),
     ],
 }
@@ -315,95 +124,71 @@ TOPIC_PRACTICE_QUESTIONS = {
     "english": {
         "passive voice": [
             ("Change to passive voice: The chef cooked the meal.", "The meal was cooked by the chef."),
-            ("Change to passive voice: The students solved the problem.", "The problem was solved by the students."),
         ],
         "reported speech": [
             ('Change to reported speech: Amina said, "I am revising now."', "Amina said that she was revising then."),
-            ('Change to reported speech: The teacher said, "Work quietly."', "The teacher told the students to work quietly."),
         ],
         "adjectives": [
             ("Identify the adjective in this sentence: The tall boy ran home.", "tall"),
-            ("Use an adjective to complete this sentence: The _____ road was difficult to cross.", "busy"),
         ],
         "tenses": [
             ("Change this sentence to the past tense: She walks to school every day.", "She walked to school every day."),
-            ("Write the present continuous form of 'read' in a sentence.", "I am reading a book."),
         ],
         "vocabulary": [
             ("Give one synonym for 'happy'.", "joyful"),
-            ("Give one antonym for 'difficult'.", "easy"),
         ],
         "parts of speech": [
             ("Identify the noun in this sentence: The teacher praised Musa.", "teacher"),
-            ("Identify the verb in this sentence: The children laughed loudly.", "laughed"),
         ],
         "comprehension": [
             ("What should you do first when answering a comprehension passage question?", "Read the passage carefully."),
-            ("Why is it important to use evidence from the passage in your answer?", "It supports the answer."),
         ],
         "essay writing": [
             ("Name one important part of an essay.", "introduction"),
-            ("What should each body paragraph in an essay contain?", "one main idea"),
         ],
         "letter writing": [
             ("Write one feature of a formal letter.", "address"),
-            ("What polite closing can be used in a formal letter?", "Yours faithfully"),
         ],
         "conjunctions": [
             ("Choose the correct conjunction: I stayed indoors _____ it was raining. (because/and)", "because"),
-            ("Join these ideas with a conjunction: She studied hard. She passed the test.", "She studied hard, so she passed the test."),
         ],
         "direct and indirect speech": [
             ('Change to indirect speech: John said, "I am tired."', "John said that he was tired."),
-            ('Change to direct speech: Mary said that she would come the next day.', 'Mary said, "I will come tomorrow."'),
         ],
     },
     "maths": {
         "fractions": [
             ("Simplify: 6/8", "3/4"),
-            ("Add: 1/4 + 1/4", "1/2"),
         ],
         "algebra": [
             ("Solve for x: x + 9 = 14", "x = 5"),
-            ("Solve for y: 3y = 18", "y = 6"),
         ],
         "geometry": [
             ("How many degrees are in a right angle?", "90"),
-            ("Name a shape with three sides.", "triangle"),
         ],
         "calculus": [
             ("Differentiate with respect to x: x^2", "2x"),
-            ("Find the derivative of 3x^2.", "6x"),
-            ("Differentiate with respect to x: 5x", "5"),
         ],
         "linear equations": [
             ("Solve for x: 2x + 3 = 11", "x = 4"),
-            ("Solve for y: 5y - 10 = 20", "y = 6"),
-            ("Solve for x: 4x = 28", "x = 7"),
         ],
         "simultaneous equations": [
             ("Solve: x + y = 7 and x - y = 1", "x = 4, y = 3"),
-            ("Solve: x + y = 10 and x - y = 2", "x = 6, y = 4"),
         ],
         "quadratic equations": [
             ("Solve: x^2 - 9 = 0", "x = 3 or x = -3"),
-            ("Solve: x^2 - 5x + 6 = 0", "x = 2 or x = 3"),
         ],
         "percentages": [
             ("Find 20% of 50.", "10"),
-            ("A shirt costs 200 shillings. What is 10% of the price?", "20 shillings"),
         ],
         "ratios": [
             ("Simplify the ratio 8:12.", "2:3"),
-            ("Share 30 in the ratio 2:3.", "12 and 18"),
         ],
         "indices": [
             ("Simplify: 2^3", "8"),
-            ("What is 10^2?", "100"),
         ],
         "trigonometry": [
             ("What is the sine of 90 degrees?", "1"),
-            ("What is the cosine of 0 degrees?", "1"),
         ],
     },
 }
@@ -421,151 +206,27 @@ TOPIC_ALIASES = {
     "conjunction": "conjunctions",
     "tense": "tenses",
     "adjective": "adjectives",
+    "noun": "parts of speech",
+    "verb": "parts of speech",
+    "indirect speech": "reported speech",
+    "direct speech": "direct and indirect speech",
 }
 
 LOCAL_TUTOR_KNOWLEDGE = [
-    {
-        "subject": "maths",
-        "keywords": ["derivative", "differentiate", "differentiation", "rate of change"],
-        "topic": "calculus",
-        "answer": (
-            "A derivative shows the rate of change of one quantity with respect to another. "
-            "In simple terms, it tells us how quickly a function is changing at a point. "
-            "For example, if y = x^2, the derivative is 2x, so the slope changes depending on the value of x. "
-            "A good next step is to practise differentiating simple powers such as x^2, 3x^2, and 5x."
-        ),
-    },
-    {
-        "subject": "maths",
-        "keywords": ["linear equation", "linear equations", "solve for x", "unknown value"],
-        "topic": "linear equations",
-        "answer": (
-            "A linear equation is an equation where the variable has power 1, for example 2x + 3 = 11. "
-            "To solve it, isolate the variable step by step by doing the same operation on both sides. "
-            "For 2x + 3 = 11, subtract 3 first to get 2x = 8, then divide by 2 to get x = 4. "
-            "Always check your answer by substituting it back into the original equation."
-        ),
-    },
-    {
-        "subject": "maths",
-        "keywords": ["algebra", "expression", "equation"],
-        "topic": "algebra",
-        "answer": (
-            "Algebra uses letters and symbols to represent unknown numbers and relationships. "
-            "An expression is a maths phrase like 3x + 2, while an equation has an equals sign, such as x + 5 = 12. "
-            "The main skill in algebra is to keep both sides balanced while solving for the unknown value."
-        ),
-    },
-    {
-        "subject": "maths",
-        "keywords": ["fraction", "fractions", "numerator", "denominator"],
-        "topic": "fractions",
-        "answer": (
-            "A fraction shows part of a whole. The top number is the numerator and the bottom number is the denominator. "
-            "To add or subtract fractions, first make sure they have the same denominator. "
-            "For example, 1/4 + 1/4 = 2/4, which simplifies to 1/2."
-        ),
-    },
-    {
-        "subject": "maths",
-        "keywords": ["percentage", "percentages", "percent"],
-        "topic": "percentages",
-        "answer": (
-            "A percentage means a number out of 100. "
-            "To find a percentage of a quantity, change the percentage into a fraction or decimal and multiply. "
-            "For example, 20% of 50 is 20/100 multiplied by 50, which equals 10."
-        ),
-    },
-    {
-        "subject": "maths",
-        "keywords": ["ratio", "ratios"],
-        "topic": "ratios",
-        "answer": (
-            "A ratio compares two quantities. "
-            "For example, a ratio of 2:3 means for every 2 parts of one quantity, there are 3 parts of the other. "
-            "When simplifying a ratio, divide both parts by the same common factor."
-        ),
-    },
-    {
-        "subject": "maths",
-        "keywords": ["trigonometry", "sine", "cosine", "tangent"],
-        "topic": "trigonometry",
-        "answer": (
-            "Trigonometry studies the relationship between angles and sides in triangles. "
-            "The main ratios are sine, cosine, and tangent. "
-            "For a right-angled triangle, sine equals opposite over hypotenuse, cosine equals adjacent over hypotenuse, and tangent equals opposite over adjacent."
-        ),
-    },
-    {
-        "subject": "english",
-        "keywords": ["passive voice", "active voice"],
-        "topic": "passive voice",
-        "answer": (
-            "Passive voice puts the receiver of the action first. "
-            "For example, 'The chef cooked the meal' in active voice becomes 'The meal was cooked by the chef' in passive voice. "
-            "The common pattern is: object + form of 'be' + past participle + optional doer."
-        ),
-    },
-    {
-        "subject": "english",
-        "keywords": ["reported speech", "indirect speech", "direct speech"],
-        "topic": "reported speech",
-        "answer": (
-            "Reported speech explains what someone said without repeating the exact words. "
-            "For example, 'Amina said, \"I am tired\"' becomes 'Amina said that she was tired.' "
-            "When changing direct speech to reported speech, pronouns, tense, and time words may change."
-        ),
-    },
-    {
-        "subject": "english",
-        "keywords": ["adjective", "adjectives"],
-        "topic": "adjectives",
-        "answer": (
-            "An adjective describes a noun or pronoun. "
-            "It tells us more about size, colour, shape, number, or quality. "
-            "In 'the tall boy', the word 'tall' is the adjective because it describes the boy."
-        ),
-    },
-    {
-        "subject": "english",
-        "keywords": ["tense", "tenses", "past tense", "present tense", "future tense"],
-        "topic": "tenses",
-        "answer": (
-            "Tenses show the time of an action. "
-            "Present tense describes what happens now, past tense describes what already happened, and future tense describes what will happen. "
-            "For example: 'I walk', 'I walked', and 'I will walk'."
-        ),
-    },
-    {
-        "subject": "english",
-        "keywords": ["noun", "nouns"],
-        "topic": "parts of speech",
-        "answer": (
-            "A noun names a person, place, thing, or idea. "
-            "Examples include teacher, Nairobi, book, and happiness. "
-            "A good way to identify a noun is to ask whether the word is naming something."
-        ),
-    },
-    {
-        "subject": "english",
-        "keywords": ["verb", "verbs"],
-        "topic": "parts of speech",
-        "answer": (
-            "A verb shows an action or a state. "
-            "Action verbs include run, read, and sing, while state verbs include be, seem, and know. "
-            "In a sentence, the verb is the word that tells what is happening."
-        ),
-    },
-    {
-        "subject": "english",
-        "keywords": ["conjunction", "conjunctions"],
-        "topic": "conjunctions",
-        "answer": (
-            "A conjunction joins words, phrases, or clauses. "
-            "Common conjunctions include and, but, because, so, and although. "
-            "For example, 'I stayed indoors because it was raining' uses 'because' to join the ideas."
-        ),
-    },
+    {"subject": "maths", "keywords": ["derivative", "differentiate", "differentiation", "rate of change"], "topic": "calculus"},
+    {"subject": "maths", "keywords": ["linear equation", "linear equations", "solve for x", "unknown value"], "topic": "linear equations"},
+    {"subject": "maths", "keywords": ["algebra", "expression", "equation"], "topic": "algebra"},
+    {"subject": "maths", "keywords": ["fraction", "fractions", "numerator", "denominator"], "topic": "fractions"},
+    {"subject": "maths", "keywords": ["percentage", "percentages", "percent"], "topic": "percentages"},
+    {"subject": "maths", "keywords": ["ratio", "ratios"], "topic": "ratios"},
+    {"subject": "maths", "keywords": ["trigonometry", "sine", "cosine", "tangent"], "topic": "trigonometry"},
+    {"subject": "english", "keywords": ["passive voice", "active voice"], "topic": "passive voice"},
+    {"subject": "english", "keywords": ["reported speech", "indirect speech", "direct speech"], "topic": "reported speech"},
+    {"subject": "english", "keywords": ["adjective", "adjectives"], "topic": "adjectives"},
+    {"subject": "english", "keywords": ["tense", "tenses", "past tense", "present tense", "future tense"], "topic": "tenses"},
+    {"subject": "english", "keywords": ["noun", "nouns"], "topic": "parts of speech"},
+    {"subject": "english", "keywords": ["verb", "verbs"], "topic": "parts of speech"},
+    {"subject": "english", "keywords": ["conjunction", "conjunctions"], "topic": "conjunctions"},
 ]
 
 
@@ -621,8 +282,69 @@ def _call_gemini(user_prompt, system_prompt=None):
     return text
 
 
-def ask_ai(question):
-    return _call_gemini(question, system_prompt="You are a helpful tutor.")
+def _extract_json_object(payload_text):
+    try:
+        return json.loads(payload_text)
+    except json.JSONDecodeError:
+        json_match = re.search(r"\{.*\}", payload_text, re.DOTALL)
+        if not json_match:
+            return None
+        try:
+            return json.loads(json_match.group(0))
+        except json.JSONDecodeError:
+            return None
+
+
+def _parse_question_answer_text(text):
+    normalized = text.strip()
+    if "Answer:" in normalized:
+        question, answer = normalized.split("Answer:", 1)
+        return question.strip(), answer.strip()
+
+    lines = [line.strip() for line in normalized.splitlines() if line.strip()]
+    if len(lines) >= 2:
+        return lines[0], lines[-1]
+
+    return normalized, "unknown"
+
+
+def _cache_generated_learning_pack(pack):
+    GENERATED_LEARNING_PACKS[pack["slug"]] = pack
+    GENERATED_LEARNING_PACKS[_normalize_topic_key(pack["topic"])] = pack
+    return pack
+
+
+def _cache_generated_audio_pack(pack):
+    GENERATED_AUDIO_PACKS[pack["slug"]] = pack
+    GENERATED_AUDIO_PACKS[_normalize_topic_key(pack["topic"])] = pack
+    return pack
+
+
+def ask_ai(question, subject=None, topic=None):
+    resolved_subject = subject or _infer_subject(question)
+    resolved_topic = topic or resolve_topic_from_text(question, subject=subject)[1]
+    topic_line = f"Target topic: {resolved_topic}\n" if resolved_topic else ""
+    subject_line = f"Subject: {resolved_subject}\n" if resolved_subject and resolved_subject != "general" else ""
+    prompt = (
+        "Answer this student question as a secondary school tutor.\n"
+        f"{subject_line}"
+        f"{topic_line}"
+        f"Question: {question.strip()}\n"
+        "Requirements:\n"
+        "- Stay on-topic and course-related.\n"
+        "- If it is Maths, explain the method step by step.\n"
+        "- If it is English, explain the rule clearly and use examples.\n"
+        "- Be accurate, supportive, and easy to understand.\n"
+        "- Do not mention being an AI or talk about the prompt.\n"
+        "- Return plain text only."
+    )
+    return _call_gemini(
+        prompt,
+        system_prompt=(
+            "You are EduAccess, a helpful secondary school tutor for English and Maths. "
+            "Give direct educational answers that are suitable for students."
+        ),
+    )
 
 
 def _extension_from_content_type(content_type):
@@ -987,10 +709,21 @@ def build_local_tutor_answer(question):
 
     for entry in LOCAL_TUTOR_KNOWLEDGE:
         if any(_keyword_in_text(keyword, normalized) for keyword in entry["keywords"]):
+            topic_title = _titleize_topic(entry["topic"])
+            if entry["subject"] == "maths":
+                answer = (
+                    f"{topic_title} is a Maths topic. Start by identifying the rule or formula being used, "
+                    "work through one example step by step, and then check the final answer carefully."
+                )
+            else:
+                answer = (
+                    f"{topic_title} is an English topic. Start with the main rule, study a correct example, "
+                    "and then practise writing or changing sentences using the same pattern."
+                )
             return {
                 "subject": entry["subject"],
                 "topic": entry["topic"],
-                "answer": entry["answer"],
+                "answer": answer,
             }
 
     resolved_subject, resolved_topic = resolve_topic_from_text(question)
@@ -1078,16 +811,7 @@ def _resolve_topic_from_text_local(question, subject=None):
 
 
 def _extract_topic_resolution_from_text(payload_text):
-    try:
-        parsed = json.loads(payload_text)
-    except json.JSONDecodeError:
-        json_match = re.search(r"\{.*\}", payload_text, re.DOTALL)
-        if not json_match:
-            return None, None, None
-        try:
-            parsed = json.loads(json_match.group(0))
-        except json.JSONDecodeError:
-            return None, None, None
+    parsed = _extract_json_object(payload_text)
 
     if not isinstance(parsed, dict):
         return None, None, None
@@ -1333,15 +1057,28 @@ def generate_learning_pack(topic, subject=None, slug=None):
     normalized_topic = _normalize_topic_key(topic)
     subject = subject or _infer_subject(normalized_topic)
     slug = slug or _slugify_topic(normalized_topic)
+    topic_title = _titleize_topic(normalized_topic)
 
     prompt = (
-        f"Create a detailed secondary school {subject} study pack about '{normalized_topic}'. "
-        "Return plain text only. Start with 'SUMMARY:' on one line, then a short summary paragraph. "
-        "After that write 'CONTENT:' on its own line and provide a rich lesson handout with:"
-        " learning goals, explanation, key ideas, worked examples, common mistakes, guided practice, answers, exam-style practice, and summary."
+        f"Create a detailed secondary school {subject} study pack about '{topic_title}'. "
+        "Make it course-related, student-friendly, and ready to download as a revision handout. "
+        "Return plain text only.\n"
+        "Start with 'SUMMARY:' on one line, then write a short summary paragraph.\n"
+        "After that write 'CONTENT:' on its own line and include:\n"
+        "1. Learning goals\n"
+        "2. Why the topic matters\n"
+        "3. Key ideas or rules\n"
+        "4. At least 3 worked examples\n"
+        "5. Common mistakes\n"
+        "6. Guided practice\n"
+        "7. Answers to guided practice\n"
+        "8. Exam-style practice\n"
+        "9. Exam-style answers\n"
+        "10. Short summary\n"
+        "Use simple classroom English."
     )
     system_prompt = (
-        "You are creating a study pack for students. "
+        "You are creating a study pack for secondary school students. "
         "Write clear, accurate, educational content with enough detail for revision. "
         "Do not use markdown code fences."
     )
@@ -1351,29 +1088,33 @@ def generate_learning_pack(topic, subject=None, slug=None):
         return _build_local_learning_pack(normalized_topic, subject=subject, slug=slug)
     summary, content = _split_generated_sections(text, "SUMMARY:", "CONTENT:")
 
-    pack = {
+    return _cache_generated_learning_pack({
         "slug": slug,
         "subject": subject,
-        "topic": _titleize_topic(normalized_topic),
-        "title": f"{_titleize_topic(normalized_topic)} Pack",
-        "summary": summary or f"Detailed revision pack for {_titleize_topic(normalized_topic)}.",
+        "topic": topic_title,
+        "title": f"{topic_title} Pack",
+        "summary": summary or f"Detailed revision pack for {topic_title}.",
         "content": content,
-    }
-    GENERATED_LEARNING_PACKS[slug] = pack
-    GENERATED_LEARNING_PACKS[normalized_topic] = pack
-    return pack
+    })
 
 
 def generate_audio_pack(topic, subject=None, slug=None):
     normalized_topic = _normalize_topic_key(topic)
     subject = subject or _infer_subject(normalized_topic)
     slug = slug or f"audio-{_slugify_topic(normalized_topic)}"
+    topic_title = _titleize_topic(normalized_topic)
 
     prompt = (
-        f"Create a detailed spoken-style lesson transcript for a secondary school {subject} topic about '{normalized_topic}'. "
-        "Return plain text only. Start with 'SUMMARY:' on one line, then a one-paragraph summary. "
-        "After that write 'TRANSCRIPT:' on its own line and provide a rich transcript students can read or listen to. "
-        "Include explanation, examples, common mistakes, and a short recap."
+        f"Create a detailed spoken-style lesson transcript for a secondary school {subject} topic about '{topic_title}'. "
+        "Make it sound like a teacher speaking to a student. Return plain text only.\n"
+        "Start with 'SUMMARY:' on one line, then a one-paragraph summary.\n"
+        "After that write 'TRANSCRIPT:' on its own line and provide a lesson that includes:\n"
+        "- a simple introduction\n"
+        "- clear explanation of the topic\n"
+        "- worked examples\n"
+        "- common mistakes\n"
+        "- revision advice\n"
+        "- a short recap at the end"
     )
     system_prompt = (
         "You are creating an educational audio lesson transcript. "
@@ -1386,31 +1127,50 @@ def generate_audio_pack(topic, subject=None, slug=None):
         return _build_local_audio_pack(normalized_topic, subject=subject, slug=slug)
     summary, transcript = _split_generated_sections(text, "SUMMARY:", "TRANSCRIPT:")
 
-    pack = {
+    return _cache_generated_audio_pack({
         "slug": slug,
         "subject": subject,
-        "topic": _titleize_topic(normalized_topic),
-        "title": f"{_titleize_topic(normalized_topic)} Audio Lesson",
-        "summary": summary or f"Audio lesson for {_titleize_topic(normalized_topic)}.",
+        "topic": topic_title,
+        "title": f"{topic_title} Audio Lesson",
+        "summary": summary or f"Audio lesson for {topic_title}.",
         "transcript": transcript,
-    }
-    GENERATED_AUDIO_PACKS[slug] = pack
-    GENERATED_AUDIO_PACKS[normalized_topic] = pack
-    return pack
+    })
 
 
 def get_or_generate_learning_pack(query, subject=None):
-    pack = get_learning_pack_by_slug_or_topic(query, subject=subject)
-    if pack:
-        return pack
-    return generate_learning_pack(query, subject=subject)
+    lowered_query = _normalize_topic_key(query)
+    generated_pack = GENERATED_LEARNING_PACKS.get(lowered_query)
+    if generated_pack and (not subject or generated_pack.get("subject") == subject):
+        return generated_pack
+
+    existing_pack = get_learning_pack_by_slug_or_topic(query, subject=subject)
+    source_topic = existing_pack["topic"] if existing_pack else query
+    source_slug = existing_pack["slug"] if existing_pack else None
+
+    try:
+        return generate_learning_pack(source_topic, subject=subject, slug=source_slug)
+    except Exception:
+        if existing_pack:
+            return existing_pack
+        raise
 
 
 def get_or_generate_audio_pack(query, subject=None):
-    pack = get_audio_pack_by_slug_or_topic(query, subject=subject)
-    if pack:
-        return pack
-    return generate_audio_pack(query, subject=subject)
+    lowered_query = _normalize_topic_key(query)
+    generated_pack = GENERATED_AUDIO_PACKS.get(lowered_query)
+    if generated_pack and (not subject or generated_pack.get("subject") == subject):
+        return generated_pack
+
+    existing_pack = get_audio_pack_by_slug_or_topic(query, subject=subject)
+    source_topic = existing_pack["topic"] if existing_pack else query
+    source_slug = existing_pack["slug"] if existing_pack else None
+
+    try:
+        return generate_audio_pack(source_topic, subject=subject, slug=source_slug)
+    except Exception:
+        if existing_pack:
+            return existing_pack
+        raise
 
 
 def generate_question(subject=None, exclude_questions=None, topic=None):
@@ -1418,6 +1178,25 @@ def generate_question(subject=None, exclude_questions=None, topic=None):
 
     if topic:
         normalized_topic = _normalize_topic_key(topic)
+        prompt = (
+            f"Create one secondary school {subject or 'general'} practice question about '{_titleize_topic(normalized_topic)}'.\n"
+            f"Avoid repeating these questions exactly: {sorted(excluded) if excluded else 'none'}\n"
+            "Return plain text only in this format:\n"
+            "Question: <question>\n"
+            "Answer: <answer>"
+        )
+        system_prompt = (
+            f"Generate one clear, short {subject or 'general'} practice question and its correct answer. "
+            "Keep it course-related and suitable for WhatsApp revision."
+        )
+        try:
+            text = _call_gemini(prompt, system_prompt=system_prompt)
+            question, answer = _parse_question_answer_text(text.replace("Question:", "", 1).strip())
+            if question and answer and question not in excluded:
+                return question, answer
+        except Exception:
+            pass
+
         topic_bank = TOPIC_PRACTICE_QUESTIONS.get(subject or "general", {}).get(normalized_topic, [])
         if topic_bank:
             available = [item for item in topic_bank if item[0] not in excluded]
@@ -1425,43 +1204,44 @@ def generate_question(subject=None, exclude_questions=None, topic=None):
                 available = topic_bank
             return random.choice(available)
 
-        prompt = f"Create one secondary school {subject or 'general'} practice question about '{topic}' and provide the answer separately."
-        system_prompt = (
-            f"Generate one clear, short {subject or 'general'} practice question based on the student's chosen topic '{topic}'. "
-            "Return the question first, then 'Answer:' and the answer."
-        )
-        text = _call_gemini(prompt, system_prompt=system_prompt)
-        parts = text.split("Answer:")
-        question = parts[0].strip()
-        answer = parts[1].strip() if len(parts) > 1 else "unknown"
-        return question, answer
-
     question_bank = LOCAL_PRACTICE_QUESTIONS.get(subject or "general", LOCAL_PRACTICE_QUESTIONS["general"])
     available = [item for item in question_bank if item[0] not in excluded]
+
+    prompt = "Create one secondary school practice question and provide the answer separately."
+    system_prompt = "Generate one simple course-related practice question with a correct answer."
+    if subject:
+        prompt = f"Create one secondary school {subject} practice question and provide the answer separately."
+        system_prompt = (
+            f"Generate one simple secondary school {subject} practice question with answer. "
+            "Keep it short, clear, and course-related."
+        )
+
+    prompt = (
+        f"{prompt}\n"
+        f"Avoid repeating these questions exactly: {sorted(excluded) if excluded else 'none'}\n"
+        "Return plain text only in this format:\n"
+        "Question: <question>\n"
+        "Answer: <answer>"
+    )
+
+    try:
+        text = _call_gemini(
+            prompt,
+            system_prompt=system_prompt,
+        )
+        question, answer = _parse_question_answer_text(text.replace("Question:", "", 1).strip())
+        if question and answer and question not in excluded:
+            return question, answer
+    except Exception:
+        pass
+
     if not available:
         available = question_bank
 
     if available:
         return random.choice(available)
 
-    prompt = "Create one question and provide the answer separately."
-    system_prompt = "Generate a simple secondary school question with answer."
-
-    if subject:
-        prompt = f"Create one {subject} practice question and provide the answer separately."
-        system_prompt = (
-            f"Generate one simple secondary school {subject} practice question with answer. "
-            "Keep it short and clear."
-        )
-
-    text = _call_gemini(
-        prompt,
-        system_prompt=system_prompt,
-    )
-    parts = text.split("Answer:")
-    question = parts[0].strip()
-    answer = parts[1].strip() if len(parts) > 1 else "unknown"
-    return question, answer
+    raise RuntimeError("Unable to generate a practice question.")
 
 
 def get_learning_packs(subject=None):
@@ -1505,9 +1285,16 @@ def get_audio_pack_by_slug_or_topic(query, subject=None):
 def get_supported_topics(subject=None):
     topics = set()
 
-    subject_topics = TOPIC_PRACTICE_QUESTIONS.get(subject, {}) if subject else None
+    subject_topics = TOPIC_CATALOG.get(subject) if subject else None
     if subject_topics is not None:
-        topics.update(subject_topics.keys())
+        topics.update(subject_topics)
+    else:
+        for subject_topics in TOPIC_CATALOG.values():
+            topics.update(subject_topics)
+
+    practice_subject_topics = TOPIC_PRACTICE_QUESTIONS.get(subject, {}) if subject else None
+    if practice_subject_topics is not None:
+        topics.update(practice_subject_topics.keys())
     else:
         for topic_map in TOPIC_PRACTICE_QUESTIONS.values():
             topics.update(topic_map.keys())

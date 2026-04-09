@@ -670,7 +670,7 @@ def _build_tutor_reply(request, incoming_msg, practice_state):
     local_answer = build_local_tutor_answer(incoming_msg)
 
     try:
-        ai_reply = ask_ai(incoming_msg)
+        ai_reply = ask_ai(incoming_msg, subject=inferred_subject, topic=inferred_topic)
         if inferred_topic:
             return f"{ai_reply}{_build_topic_resource_lines(request, inferred_subject, inferred_topic)}"
         return ai_reply
