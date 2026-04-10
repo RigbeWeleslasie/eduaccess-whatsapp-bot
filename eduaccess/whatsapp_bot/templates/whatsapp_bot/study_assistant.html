@@ -305,7 +305,7 @@
   <section class="hero">
     <span class="eyebrow">Your AI Study Tutor</span>
     <h1>What do you want to learn today?</h1>
-    <p>Ask any question, practise Maths or English, or grab an offline study pack — all in one place.</p>
+    <p>Ask any question, practise Maths or English, or grab an offline study pack - all in one place.</p>
     <div class="actions">
       <a class="btn secondary" href="{% url 'offline_library' %}">Open Offline Library</a>
     </div>
@@ -339,7 +339,7 @@
   <section class="study-shell">
     <article class="card stack commands-card">
       <h2>Not sure where to start? Tap any option below</h2>
-      <p style="margin:0 0 10px;color:var(--muted);font-size:14px;">Each button sends the message instantly — no typing needed.</p>
+      <p style="margin:0 0 10px;color:var(--muted);font-size:14px;">Each button sends the message instantly - no typing needed.</p>
       <div class="command-strip">
         <button class="command-chip prompt-chip-submit" type="button" data-prompt="practice maths">
           <strong>Practice Maths</strong>
@@ -370,7 +370,7 @@
   </section>
 
   <section class="study-shell">
-    <article class="chat-frame">
+    <article class="chat-frame" id="chat-frame">
       <div class="chat-header">
         <div class="chat-heading">
           <h2>Conversation</h2>
@@ -438,11 +438,18 @@
 {% block extra_scripts %}
   <script>
     const conversation = document.getElementById("conversation");
+    const chatFrame = document.getElementById("chat-frame");
     const questionField = document.getElementById("question");
     const chatForm = document.getElementById("chat-form");
 
     if (conversation) {
       conversation.scrollTop = conversation.scrollHeight;
+    }
+
+    // After a form submit the page reloads at the top — scroll back down to the chat
+    const hasMessages = conversation && conversation.querySelectorAll(".message-row").length > 1;
+    if (hasMessages && chatFrame) {
+      chatFrame.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
     // Auto-submit buttons — fill the field and submit the form immediately
