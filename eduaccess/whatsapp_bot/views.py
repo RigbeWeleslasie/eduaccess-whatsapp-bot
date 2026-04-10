@@ -894,14 +894,9 @@ def register_page(request):
     if request.method == "POST" and form.is_valid():
         user = form.save()
         login(request, user)
-        return redirect("welcome")
+        return redirect("study_assistant")
 
     return render(request, "whatsapp_bot/register.html", {"form": form})
-
-
-@login_required
-def welcome_page(request):
-    return render(request, "whatsapp_bot/welcome.html")
 
 
 def landing_page(request):

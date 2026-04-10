@@ -5,30 +5,85 @@
 {% block extra_head %}
   <style>
     .landing-hero {
-      padding: 36px 28px;
+      padding: 40px 28px 36px;
       margin-bottom: 24px;
       text-align: center;
-      background: var(--panel);
+      background: linear-gradient(160deg, rgba(15,118,110,0.06) 0%, var(--panel) 60%);
       border-radius: 24px;
-      border: 1px solid rgba(15, 118, 110, 0.12);
+      border: 1px solid rgba(15, 118, 110, 0.14);
       box-shadow: 0 14px 36px rgba(32, 48, 60, 0.08);
     }
     .landing-hero h1 {
-      font-size: clamp(1.6rem, 5vw, 2.4rem);
+      font-size: clamp(1.7rem, 5vw, 2.5rem);
       margin-bottom: 14px;
       line-height: 1.2;
+      color: var(--ink);
     }
-    .landing-hero p {
-      font-size: 1.05rem;
-      max-width: 520px;
-      margin: 0 auto 24px;
+    .landing-hero .lead {
+      font-size: 1.1rem;
+      max-width: 540px;
+      margin: 0 auto 10px;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+    .landing-hero .sub {
+      font-size: 0.95rem;
+      max-width: 500px;
+      margin: 0 auto 28px;
+      color: var(--muted);
     }
     .landing-hero .actions {
       justify-content: center;
     }
+    .what-section {
+      background: var(--panel);
+      border-radius: 20px;
+      border: 1px solid rgba(15, 118, 110, 0.1);
+      padding: 28px 24px;
+      margin-bottom: 20px;
+    }
+    .what-section h2 {
+      margin-bottom: 8px;
+      font-size: 1.25rem;
+    }
+    .what-section p {
+      margin: 0 0 14px;
+      line-height: 1.7;
+    }
+    .what-section p:last-child {
+      margin: 0;
+    }
+    .who-grid {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .who-card {
+      padding: 18px 20px;
+      background: var(--panel);
+      border-radius: 18px;
+      border-left: 4px solid var(--brand);
+      box-shadow: 0 6px 20px rgba(32, 48, 60, 0.06);
+    }
+    .who-card h3 {
+      margin: 0 0 6px;
+      font-size: 1rem;
+      color: var(--brand);
+    }
+    .who-card p {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.6;
+    }
     .features-grid {
       display: grid;
       gap: 14px;
+      margin-bottom: 20px;
+    }
+    .features-grid h2 {
+      grid-column: 1 / -1;
+      margin: 0 0 4px;
+      font-size: 1.25rem;
     }
     .feature-card {
       display: grid;
@@ -66,17 +121,67 @@
       font-size: 14px;
       line-height: 1.55;
     }
-    .cta-footer {
-      text-align: center;
-      padding: 28px 20px;
+    .how-section {
       background: var(--panel);
       border-radius: 20px;
       border: 1px solid rgba(15, 118, 110, 0.1);
+      padding: 28px 24px;
+      margin-bottom: 20px;
+    }
+    .how-section h2 {
+      margin-bottom: 16px;
+      font-size: 1.25rem;
+    }
+    .steps {
+      display: grid;
+      gap: 14px;
+    }
+    .step {
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+    .step-num {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--brand);
+      color: #fff;
+      font-weight: 800;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-body h3 {
+      margin: 0 0 3px;
+      font-size: 0.95rem;
+    }
+    .step-body p {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+    .cta-footer {
+      text-align: center;
+      padding: 32px 24px;
+      background: linear-gradient(160deg, rgba(15,118,110,0.07) 0%, var(--panel) 70%);
+      border-radius: 20px;
+      border: 1px solid rgba(15, 118, 110, 0.14);
       box-shadow: 0 8px 24px rgba(32, 48, 60, 0.06);
     }
+    .cta-footer h2 {
+      margin-bottom: 8px;
+      font-size: 1.3rem;
+    }
     .cta-footer p {
-      margin: 0 0 18px;
+      margin: 0 0 22px;
       font-size: 1rem;
+      max-width: 420px;
+      margin-left: auto;
+      margin-right: auto;
     }
     .cta-footer .actions {
       justify-content: center;
@@ -85,22 +190,58 @@
       .features-grid {
         grid-template-columns: repeat(2, 1fr);
       }
+      .who-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
   </style>
 {% endblock %}
 
 {% block content %}
+
+  <!-- Hero -->
   <section class="landing-hero">
-    <span class="eyebrow">Free for students</span>
-    <h1>Learn Maths and English with your own AI tutor</h1>
-    <p>EduAccess gives every student a personal tutor in their pocket — ask questions, practise topics, and study offline, anytime.</p>
+    <span class="eyebrow">Free for every student</span>
+    <h1>Your personal AI tutor for Maths and English</h1>
+    <p class="lead">EduAccess is a free learning tool that gives every secondary school student access to a tutor — whether they have reliable internet or not, and whether they can afford a private tutor or not.</p>
+    <p class="sub">Ask questions, practise topics, get feedback, and download lessons to your phone. All in one place.</p>
     <div class="actions">
-      <a class="btn" href="{% url 'register' %}">Create Free Account</a>
-      <a class="btn secondary" href="{% url 'login' %}">I already have an account</a>
+      <a class="btn" href="{% url 'register' %}">Start Learning Free</a>
+      <a class="btn secondary" href="{% url 'login' %}">I have an account</a>
     </div>
   </section>
 
+  <!-- What is EduAccess -->
+  <section class="what-section">
+    <h2>What is EduAccess?</h2>
+    <p>EduAccess is an AI-powered study assistant built specifically for secondary school students. It covers the two subjects that matter most in exams — <strong>Maths</strong> and <strong>English</strong> — and acts like a patient, always-available tutor.</p>
+    <p>You can type a question in plain language — "explain passive voice", "solve 3x + 6 = 18", "what is a fraction?" — and get a clear, step-by-step answer instantly. No waiting, no judgement, no cost.</p>
+    <p>EduAccess also works on <strong>WhatsApp</strong>, so students who do not have a smartphone app can still get the same tutor experience through a platform they already use every day.</p>
+  </section>
+
+  <!-- Who it is for -->
+  <div class="who-grid">
+    <div class="who-card">
+      <h3>Students without a private tutor</h3>
+      <p>Private tutoring is expensive. EduAccess gives every student the same quality of help — explanations, examples, and practice — completely free.</p>
+    </div>
+    <div class="who-card">
+      <h3>Students with limited internet</h3>
+      <p>Download study packs and audio lessons to your phone once, then study them anywhere — even with no data or Wi-Fi connection.</p>
+    </div>
+    <div class="who-card">
+      <h3>Students preparing for exams</h3>
+      <p>Practise topic-by-topic, get instant feedback on your answers, and track your score so you can see which areas need more work.</p>
+    </div>
+    <div class="who-card">
+      <h3>Students who learn by listening</h3>
+      <p>Every study pack includes a spoken audio lesson you can listen to on the way to school or at any time that suits you.</p>
+    </div>
+  </div>
+
+  <!-- Features -->
   <section class="features-grid">
+    <h2>What you can do</h2>
 
     <div class="feature-card">
       <div class="feature-icon">
@@ -109,8 +250,8 @@
         </svg>
       </div>
       <div class="feature-body">
-        <h3>Ask the AI tutor anything</h3>
-        <p>Type any Maths or English question and get a clear, step-by-step explanation — like having a tutor available 24/7.</p>
+        <h3>Ask the tutor any question</h3>
+        <p>Type in plain language. "Explain algebra", "What is passive voice?", "How do I find a percentage?" — get a clear answer every time.</p>
       </div>
     </div>
 
@@ -122,8 +263,8 @@
         </svg>
       </div>
       <div class="feature-body">
-        <h3>Practise and get instant feedback</h3>
-        <p>Answer Maths and English practice questions, get immediate feedback, and watch your score improve over time.</p>
+        <h3>Practise with real questions</h3>
+        <p>Get Maths and English practice questions, submit your answer, and receive instant feedback on whether you were right and why.</p>
       </div>
     </div>
 
@@ -135,8 +276,8 @@
         </svg>
       </div>
       <div class="feature-body">
-        <h3>Study offline, no internet needed</h3>
-        <p>Download subject packs and audio lessons to your phone. Keep studying even when you have no data or Wi-Fi.</p>
+        <h3>Download packs for offline study</h3>
+        <p>Save complete topic guides — notes, examples, and practice questions — to your phone so you can study without any internet.</p>
       </div>
     </div>
 
@@ -149,7 +290,7 @@
       </div>
       <div class="feature-body">
         <h3>Listen to audio lessons</h3>
-        <p>Prefer to listen? Every study pack comes with an audio lesson you can play back anywhere, at your own pace.</p>
+        <p>Every topic pack comes with a full spoken lesson. Play it on the bus, at home, or anywhere — no reading required.</p>
       </div>
     </div>
 
@@ -163,31 +304,69 @@
       </div>
       <div class="feature-body">
         <h3>Track your progress</h3>
-        <p>Your practice scores and topics are saved to your account so you can see exactly how far you have come.</p>
+        <p>Your scores are saved to your account after every practice session so you can see what you have improved and what to focus on next.</p>
       </div>
     </div>
 
     {% if whatsapp_cta.is_configured %}
     <div class="feature-card">
-      <div class="feature-icon" style="background: rgba(24,179,138,0.12);">
+      <div class="feature-icon" style="background:rgba(24,179,138,0.12);">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="stroke:#18b38a;">
           <path d="M19.05 4.94A9.93 9.93 0 0 0 12 2C6.49 2 2 6.48 2 12c0 1.76.46 3.49 1.33 5.01L2 22l5.12-1.3A9.96 9.96 0 0 0 12 22c5.51 0 10-4.48 10-10 0-2.67-1.04-5.18-2.95-7.06Z"/>
         </svg>
       </div>
       <div class="feature-body">
-        <h3>Also works on WhatsApp</h3>
-        <p>No smartphone app to install. Send the same questions directly on WhatsApp and get tutor replies there too.</p>
+        <h3>Works on WhatsApp too</h3>
+        <p>No app download needed. Message EduAccess directly on WhatsApp and get the same tutor responses on a platform you already use.</p>
       </div>
     </div>
     {% endif %}
 
   </section>
 
+  <!-- How it works -->
+  <section class="how-section">
+    <h2>How it works</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>Create your free account</h3>
+          <p>Sign up in under a minute — just a username and password, no email required.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>Ask a question or start practising</h3>
+          <p>Type any Maths or English question, or tap "Practice Maths" / "Practice English" to get a question with instant feedback.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>Download packs to study offline</h3>
+          <p>Open the Library, pick a topic, and download the study pack or audio lesson to use anytime without internet.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h3>Check your progress</h3>
+          <p>Visit your dashboard to see your scores by subject and decide where to focus your next study session.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Final CTA -->
   <section class="cta-footer">
-    <p>Ready to start learning? It takes less than a minute to sign up.</p>
+    <h2>Ready to start?</h2>
+    <p>EduAccess is completely free. Create your account and begin learning in under a minute.</p>
     <div class="actions">
-      <a class="btn" href="{% url 'register' %}">Create Free Account</a>
+      <a class="btn" href="{% url 'register' %}">Start Learning Free</a>
       <a class="btn secondary" href="{% url 'login' %}">Login</a>
     </div>
   </section>
+
 {% endblock %}

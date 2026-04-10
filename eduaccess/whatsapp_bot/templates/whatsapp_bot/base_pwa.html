@@ -18,10 +18,6 @@
       --brand: #0f766e;
       --brand-soft: #d7f3ee;
       --accent: #f59e0b;
-      --nav-h: 0px;
-    }
-    body.has-nav {
-      --nav-h: 64px;
     }
     * {
       box-sizing: border-box;
@@ -37,34 +33,128 @@
     main {
       max-width: 960px;
       margin: 0 auto;
-      padding: 24px 16px calc(var(--nav-h) + 32px);
+      padding: 24px 16px 48px;
     }
-    .topbar {
+    /* ── Unified navbar ── */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      background: rgba(255, 253, 247, 0.96);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(15, 118, 110, 0.12);
+      box-shadow: 0 2px 12px rgba(32, 48, 60, 0.06);
+    }
+    .navbar-inner {
       max-width: 960px;
       margin: 0 auto;
-      padding: 16px 16px 0;
+      padding: 0 16px;
+      height: 56px;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
+      gap: 8px;
     }
-    .topbar-brand {
+    .navbar-brand {
       color: var(--brand);
-      font-weight: 700;
+      font-weight: 800;
+      font-size: 1.1rem;
       text-decoration: none;
       letter-spacing: 0.03em;
+      margin-right: 8px;
+      flex-shrink: 0;
     }
-    .topbar-links {
+    /* nav links — desktop */
+    .navbar-links {
       display: flex;
       align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
+      gap: 2px;
+      flex: 1;
     }
-    .topbar-note {
+    .nav-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      text-decoration: none;
       color: var(--muted);
       font-size: 14px;
+      font-weight: 700;
+      transition: color 0.15s, background 0.15s;
+      white-space: nowrap;
     }
+    .nav-link svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .nav-link:hover { color: var(--brand); background: var(--brand-soft); }
+    .nav-link.active { color: var(--brand); background: var(--brand-soft); }
+    /* right side */
+    .navbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .navbar-username {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    /* hamburger — mobile only */
+    .hamburger {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      color: var(--ink);
+      border-radius: 10px;
+      transition: background 0.15s;
+      margin-left: auto;
+    }
+    .hamburger:hover { background: var(--brand-soft); }
+    /* mobile dropdown */
+    .mobile-menu {
+      display: none;
+      flex-direction: column;
+      background: var(--panel);
+      border-top: 1px solid rgba(15, 118, 110, 0.1);
+      box-shadow: 0 8px 24px rgba(32, 48, 60, 0.12);
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a,
+    .mobile-menu button {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 15px 20px;
+      text-decoration: none;
+      color: var(--ink);
+      font-size: 15px;
+      font-weight: 700;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      border-bottom: 1px solid rgba(15, 118, 110, 0.07);
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.12s;
+    }
+    .mobile-menu a:last-child,
+    .mobile-menu button:last-child { border-bottom: none; }
+    .mobile-menu a:hover,
+    .mobile-menu button:hover { background: var(--brand-soft); }
+    .mobile-menu a.active { color: var(--brand); background: var(--brand-soft); }
+    .mobile-menu svg { width: 20px; height: 20px; flex-shrink: 0; stroke: currentColor; }
+    .mobile-menu .menu-logout { color: var(--muted); }
+    @media (max-width: 600px) {
+      .navbar-links,
+      .navbar-username,
+      .navbar-logout { display: none; }
+      .hamburger { display: inline-flex; align-items: center; justify-content: center; }
+    }
+    /* keep old .topbar-note used elsewhere */
+    .topbar-note { color: var(--muted); font-size: 14px; }
     .hero,
     .card {
       background: var(--panel);
@@ -286,58 +376,6 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
-    /* ── Bottom navigation bar ── */
-    .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      z-index: 100;
-      height: var(--nav-h);
-      background: rgba(255, 253, 247, 0.96);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border-top: 1px solid rgba(15, 118, 110, 0.12);
-      display: flex;
-      align-items: stretch;
-      justify-content: space-around;
-      padding: 0 4px;
-      padding-bottom: env(safe-area-inset-bottom);
-    }
-    .nav-tab {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      flex: 1;
-      padding: 8px 4px;
-      text-decoration: none;
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.03em;
-      border-radius: 14px;
-      margin: 6px 2px;
-      transition: color 0.15s, background 0.15s;
-    }
-    .nav-tab svg {
-      width: 22px;
-      height: 22px;
-      flex-shrink: 0;
-    }
-    .nav-tab:hover {
-      color: var(--brand);
-      background: var(--brand-soft);
-    }
-    .nav-tab.active {
-      color: var(--brand);
-      background: var(--brand-soft);
-    }
-    .nav-tab.active svg {
-      stroke: var(--brand);
-    }
-    /* simplified topbar for logged-in state */
     .topbar-auth {
       display: flex;
       align-items: center;
@@ -346,62 +384,102 @@
   </style>
   {% block extra_head %}{% endblock %}
 </head>
-<body{% if request.user.is_authenticated %} class="has-nav"{% endif %}>
-  <div class="topbar">
-    {% if request.user.is_authenticated %}
-      <a class="topbar-brand" href="{% url 'study_assistant' %}">EduAccess</a>
-      <div class="topbar-auth">
-        <span class="topbar-note">{{ request.user.username }}</span>
-        <form method="post" action="{% url 'logout' %}">
-          {% csrf_token %}
-          <button class="btn secondary" type="submit" style="min-width:0;padding:8px 14px;font-size:13px;">Logout</button>
-        </form>
-      </div>
-    {% else %}
-      <a class="topbar-brand" href="{% url 'login' %}?next={{ request.path }}">EduAccess</a>
-      <div class="topbar-auth">
-        <a class="btn secondary" href="{% url 'login' %}?next={{ request.path }}">Login</a>
-        <a class="btn" href="{% url 'register' %}">Create Account</a>
-      </div>
-    {% endif %}
-  </div>
-  <main>
-    {% block content %}{% endblock %}
-  </main>
-
+<body>
   {% if request.user.is_authenticated %}
     {% url 'study_assistant' as url_study %}
     {% url 'offline_library' as url_library %}
     {% url 'dashboard' as url_dashboard %}
-    <nav class="bottom-nav" aria-label="Main navigation">
+  {% endif %}
 
-      <a class="nav-tab{% if request.path == url_study %} active{% endif %}" href="{{ url_study }}" aria-label="Study">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-        </svg>
+  <header class="navbar">
+    <div class="navbar-inner">
+      {% if request.user.is_authenticated %}
+        <a class="navbar-brand" href="{{ url_study }}">EduAccess</a>
+        <nav class="navbar-links" aria-label="Main navigation">
+          <a class="nav-link{% if request.path == url_study %} active{% endif %}" href="{{ url_study }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Study
+          </a>
+          <a class="nav-link{% if request.path == url_library %} active{% endif %}" href="{{ url_library }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            Library
+          </a>
+          <a class="nav-link{% if request.path == url_dashboard %} active{% endif %}" href="{{ url_dashboard }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Dashboard
+          </a>
+        </nav>
+        <div class="navbar-right">
+          <span class="navbar-username">{{ request.user.username }}</span>
+          <form method="post" action="{% url 'logout' %}" class="navbar-logout">
+            {% csrf_token %}
+            <button class="btn secondary" type="submit" style="min-width:0;padding:7px 14px;font-size:13px;">Logout</button>
+          </form>
+        </div>
+        {# Hamburger — mobile only #}
+        <button class="hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+            <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+      {% else %}
+        <a class="navbar-brand" href="{% url 'home' %}">EduAccess</a>
+        <div class="navbar-right" style="margin-left:auto;">
+          <a class="btn secondary" href="{% url 'login' %}?next={{ request.path }}" style="min-width:0;padding:7px 16px;font-size:13px;">Login</a>
+          <a class="btn" href="{% url 'register' %}" style="min-width:0;padding:7px 16px;font-size:13px;">Sign Up</a>
+        </div>
+      {% endif %}
+    </div>
+
+    {% if request.user.is_authenticated %}
+    <div class="mobile-menu" id="mobile-menu" aria-label="Mobile navigation">
+      <a class="{% if request.path == url_study %}active{% endif %}" href="{{ url_study }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         Study
       </a>
-
-      <a class="nav-tab{% if request.path == url_library %} active{% endif %}" href="{{ url_library }}" aria-label="Library">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-        </svg>
+      <a class="{% if request.path == url_library %}active{% endif %}" href="{{ url_library }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
         Library
       </a>
-
-      <a class="nav-tab{% if request.path == url_dashboard %} active{% endif %}" href="{{ url_dashboard }}" aria-label="Dashboard">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <line x1="18" y1="20" x2="18" y2="10"/>
-          <line x1="12" y1="20" x2="12" y2="4"/>
-          <line x1="6" y1="20" x2="6" y2="14"/>
-        </svg>
-        Progress
+      <a class="{% if request.path == url_dashboard %}active{% endif %}" href="{{ url_dashboard }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Dashboard
       </a>
+      <form method="post" action="{% url 'logout' %}" style="margin:0;">
+        {% csrf_token %}
+        <button type="submit" class="menu-logout">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Logout
+        </button>
+      </form>
+    </div>
+    {% endif %}
+  </header>
 
-    </nav>
-  {% endif %}
+  <main>
+    {% block content %}{% endblock %}
+  </main>
   <script>
+    // Hamburger menu toggle
+    const hamburger = document.getElementById("hamburger");
+    const mobileMenu = document.getElementById("mobile-menu");
+    if (hamburger && mobileMenu) {
+      hamburger.addEventListener("click", function () {
+        const isOpen = mobileMenu.classList.toggle("open");
+        hamburger.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        hamburger.querySelector("svg").innerHTML = isOpen
+          ? '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'
+          : '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>';
+      });
+      // Close menu when a nav link is tapped
+      mobileMenu.querySelectorAll("a").forEach(function (link) {
+        link.addEventListener("click", function () {
+          mobileMenu.classList.remove("open");
+          hamburger.setAttribute("aria-expanded", "false");
+        });
+      });
+    }
+
     const isLocalDevHost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
 
     if ("serviceWorker" in navigator) {
