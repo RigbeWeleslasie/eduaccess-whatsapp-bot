@@ -41,6 +41,14 @@ def _get_request_base_url(request):
     return f"{request.scheme}://{request.get_host()}"
 
 
+def _topic_to_slug(topic):
+    return re.sub(r"[^a-z0-9]+", "-", topic.lower()).strip("-") or "study-topic"
+
+
+def _topic_to_title(topic):
+    return " ".join(word.capitalize() for word in re.sub(r"[-_]+", " ", topic).split())
+
+
 def _normalize_whatsapp_sender(raw_sender):
     sender = (raw_sender or "").strip()
     if sender.startswith("whatsapp:"):
@@ -523,16 +531,41 @@ def _build_practice_feedback_reply(state, student_answer):
     )
 
 
+def _build_welcome_reply(request):
+    return (
+        "Welcome to *EduAccess* \U0001f393\n\n"
+        "I am your personal study tutor for Maths and English.\n\n"
+        "Here is what you can do:\n\n"
+        "*Practice*\n"
+        "- practice maths\n"
+        "- practice english\n\n"
+        "*Ask the tutor*\n"
+        "- Explain algebra\n"
+        "- What is passive voice?\n"
+        "- Solve 2x + 5 = 11\n\n"
+        "*Study packs (download & read offline)*\n"
+        "- pack algebra\n"
+        "- pack passive voice\n\n"
+        "*Audio lessons (listen offline)*\n"
+        "- audio pack algebra\n\n"
+        "*Your progress*\n"
+        "- score\n\n"
+        f"Open the web app: {_get_request_base_url(request)}/\n\n"
+        "Just send a message to get started \u2728"
+    )
+
+
 def _build_greeting_reply(request):
     return (
-        "Hi there. I can help you with English and Maths.\n\n"
-        "You can ask a question, practise by topic, get feedback, and open offline study resources.\n\n"
-        "Try messages like:\n"
+        "Hi! \U0001f44b I am your EduAccess tutor.\n\n"
+        "I can help you with *Maths* and *English*.\n\n"
+        "Try one of these:\n"
         "- practice maths\n"
         "- practice english\n"
-        "- Teach me linear equations\n"
-        "- Explain passive voice\n"
-        f"- offline library: {_get_request_base_url(request)}/offline-library/"
+        "- Explain fractions\n"
+        "- pack algebra\n"
+        "- score\n\n"
+        "What would you like to do?"
     )
 
 
@@ -564,7 +597,11 @@ def _build_tutor_reply(request, incoming_msg, practice_state):
     is_score_request = normalized in {"score", "progress", "my score", "show progress"}
     is_practice_request = False
 
-    if normalized in {"hi", "hello", "hey", "good morning", "good afternoon", "good evening", "start"}:
+    # Twilio sandbox join keyword — user just joined for the first time
+    if normalized.startswith("join ") or normalized == "join":
+        return _build_welcome_reply(request)
+
+    if normalized in {"hi", "hello", "hey", "good morning", "good afternoon", "good evening", "start", "menu", "help"}:
         return _build_greeting_reply(request)
 
     if normalized in {"offline library", "study offline", "offline app"}:
@@ -692,22 +729,25 @@ def _build_tutor_reply(request, incoming_msg, practice_state):
 
 def _offline_library_entries(request, subject=None):
     entries = []
-    audio_packs = {pack["topic"].lower(): pack for pack in get_audio_packs(subject=subject)}
+    for current_subject in ([subject] if subject else ["maths", "english"]):
+        for topic in get_supported_topics(subject=current_subject):
+            slug = _topic_to_slug(topic)
+            topic_title = _topic_to_title(topic)
+            if current_subject == "maths":
+                summary = f"Dynamic Maths study pack for {topic_title}, generated through Gemini when opened."
+            else:
+                summary = f"Dynamic English study pack for {topic_title}, generated through Gemini when opened."
 
-    for pack in get_learning_packs(subject=subject):
-        audio_pack = audio_packs.get(pack["topic"].lower())
-        if not audio_pack:
-            continue
-        entries.append(
-            {
-                "topic": pack["topic"],
-                "subject": pack["subject"],
-                "summary": pack["summary"],
-                "text_url": f"{_get_request_base_url(request)}/packs/{pack['slug']}/",
-                "audio_url": f"{_get_request_base_url(request)}/audio-packs/{audio_pack['slug']}/player/",
-                "transcript_url": f"{_get_request_base_url(request)}/audio-packs/{audio_pack['slug']}/transcript/",
-            }
-        )
+            entries.append(
+                {
+                    "topic": topic_title,
+                    "subject": current_subject,
+                    "summary": summary,
+                    "text_url": f"{_get_request_base_url(request)}/packs/{slug}/",
+                    "audio_url": f"{_get_request_base_url(request)}/audio-packs/audio-{slug}/player/",
+                    "transcript_url": f"{_get_request_base_url(request)}/audio-packs/audio-{slug}/transcript/",
+                }
+            )
 
     return entries
 
@@ -792,12 +832,12 @@ def service_worker(request):
         static("whatsapp_bot/icons/icon-512.png"),
     ]
 
-    for pack in get_learning_packs():
-        offline_urls.append(f"/packs/{pack['slug']}/")
-
-    for pack in get_audio_packs():
-        offline_urls.append(f"/audio-packs/{pack['slug']}/player/")
-        offline_urls.append(f"/audio-packs/{pack['slug']}/transcript/")
+    for current_subject in ["maths", "english"]:
+        for topic in get_supported_topics(subject=current_subject):
+            slug = _topic_to_slug(topic)
+            offline_urls.append(f"/packs/{slug}/")
+            offline_urls.append(f"/audio-packs/audio-{slug}/player/")
+            offline_urls.append(f"/audio-packs/audio-{slug}/transcript/")
 
     offline_urls = list(dict.fromkeys(offline_urls))
 

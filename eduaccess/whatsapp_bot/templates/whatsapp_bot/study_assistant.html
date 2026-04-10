@@ -194,6 +194,17 @@
       border-radius: 18px;
       background: #f8f5eb;
       border: 1px solid rgba(15, 118, 110, 0.14);
+      cursor: pointer;
+      text-align: left;
+      font: inherit;
+      transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+    }
+    .command-chip:hover,
+    .command-chip:focus-visible {
+      background: rgba(15, 118, 110, 0.08);
+      border-color: var(--brand);
+      box-shadow: 0 4px 14px rgba(15, 118, 110, 0.12);
+      outline: none;
     }
     .command-chip strong {
       display: block;
@@ -292,9 +303,9 @@
 
 {% block content %}
   <section class="hero">
-    <span class="eyebrow">Same Tutor, Web Version</span>
-    <h1>EduAccess Study Assistant</h1>
-    <p>Use the same commands available on WhatsApp right here in the app. Ask a question, request a Maths or English pack, or open the offline library.</p>
+    <span class="eyebrow">Your AI Study Tutor</span>
+    <h1>What do you want to learn today?</h1>
+    <p>Ask any question, practise Maths or English, or grab an offline study pack — all in one place.</p>
     <div class="actions">
       <a class="btn secondary" href="{% url 'offline_library' %}">Open Offline Library</a>
     </div>
@@ -327,40 +338,33 @@
 
   <section class="study-shell">
     <article class="card stack commands-card">
-      <h2>Try these commands</h2>
+      <h2>Not sure where to start? Tap any option below</h2>
+      <p style="margin:0 0 10px;color:var(--muted);font-size:14px;">Each button sends the message instantly — no typing needed.</p>
       <div class="command-strip">
-        <div class="command-chip">
-          <strong>Ask a question</strong>
-          <span>"Explain algebra"</span>
-        </div>
-        <div class="command-chip">
-          <strong>English practice</strong>
-          <span>"practice english"</span>
-        </div>
-        <div class="command-chip">
-          <strong>Maths practice</strong>
-          <span>"practice maths"</span>
-        </div>
-        <div class="command-chip">
-          <strong>Open library</strong>
-          <span>"offline library"</span>
-        </div>
-        <div class="command-chip">
-          <strong>Maths pack</strong>
-          <span>"pack algebra"</span>
-        </div>
-        <div class="command-chip">
-          <strong>English pack</strong>
-          <span>"pack passive voice"</span>
-        </div>
-        <div class="command-chip">
-          <strong>Maths audio</strong>
-          <span>"audio pack algebra"</span>
-        </div>
-        <div class="command-chip">
-          <strong>English audio</strong>
-          <span>"audio pack passive voice"</span>
-        </div>
+        <button class="command-chip prompt-chip-submit" type="button" data-prompt="practice maths">
+          <strong>Practice Maths</strong>
+          <span>Get a Maths question to answer</span>
+        </button>
+        <button class="command-chip prompt-chip-submit" type="button" data-prompt="practice english">
+          <strong>Practice English</strong>
+          <span>Get an English question to answer</span>
+        </button>
+        <button class="command-chip prompt-chip-submit" type="button" data-prompt="Explain algebra">
+          <strong>Explain algebra</strong>
+          <span>Ask the tutor to explain a topic</span>
+        </button>
+        <button class="command-chip prompt-chip-submit" type="button" data-prompt="pack algebra">
+          <strong>Maths study pack</strong>
+          <span>Download a topic pack to study offline</span>
+        </button>
+        <button class="command-chip prompt-chip-submit" type="button" data-prompt="pack passive voice">
+          <strong>English study pack</strong>
+          <span>Download an English pack offline</span>
+        </button>
+        <button class="command-chip prompt-chip-submit" type="button" data-prompt="audio pack algebra">
+          <strong>Audio lesson</strong>
+          <span>Listen to a spoken lesson</span>
+        </button>
       </div>
     </article>
   </section>
@@ -395,7 +399,13 @@
             <div class="message-content">
               <span class="message-label">EduAccess</span>
               <div class="bubble assistant">
-                Hello. You can ask for help with English or Maths, request a pack, or open the offline library.
+                <p style="margin:0 0 12px;">Hi! I'm your EduAccess tutor. Pick one to get started:</p>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                  <button class="prompt-chip prompt-chip-submit" type="button" data-prompt="practice maths">Practice Maths</button>
+                  <button class="prompt-chip prompt-chip-submit" type="button" data-prompt="practice english">Practice English</button>
+                  <button class="prompt-chip prompt-chip-submit" type="button" data-prompt="Explain fractions">Explain a topic</button>
+                  <button class="prompt-chip prompt-chip-submit" type="button" data-prompt="offline library">Open offline library</button>
+                </div>
               </div>
             </div>
           </div>
@@ -404,16 +414,16 @@
       <div class="composer-card">
         <h2>Ask EduAccess</h2>
         <div class="quick-prompts">
-          <button class="prompt-chip" type="button" data-prompt="practice english">Practice English</button>
-          <button class="prompt-chip" type="button" data-prompt="practice maths">Practice Maths</button>
-          <button class="prompt-chip" type="button" data-prompt="offline library">Offline Library</button>
-          <button class="prompt-chip" type="button" data-prompt="pack algebra">Pack Algebra</button>
+          <button class="prompt-chip prompt-chip-submit" type="button" data-prompt="practice english">Practice English</button>
+          <button class="prompt-chip prompt-chip-submit" type="button" data-prompt="practice maths">Practice Maths</button>
+          <button class="prompt-chip prompt-chip-submit" type="button" data-prompt="offline library">Offline Library</button>
+          <button class="prompt-chip prompt-chip-submit" type="button" data-prompt="pack algebra">Pack Algebra</button>
         </div>
         <form method="post" class="stack" id="chat-form">
           {% csrf_token %}
           <div class="field">
             <label for="question">Message</label>
-            <textarea id="question" name="question" placeholder="Type the same kind of request you would send on WhatsApp."></textarea>
+            <textarea id="question" name="question" placeholder="e.g. 'Explain fractions', 'practice maths', 'pack algebra'…"></textarea>
           </div>
           <div class="actions chat-actions">
             <button class="btn" type="submit">Send</button>
@@ -429,19 +439,18 @@
   <script>
     const conversation = document.getElementById("conversation");
     const questionField = document.getElementById("question");
-    const quickPromptButtons = document.querySelectorAll("[data-prompt]");
+    const chatForm = document.getElementById("chat-form");
 
     if (conversation) {
       conversation.scrollTop = conversation.scrollHeight;
     }
 
-    quickPromptButtons.forEach(function (button) {
+    // Auto-submit buttons — fill the field and submit the form immediately
+    document.querySelectorAll(".prompt-chip-submit").forEach(function (button) {
       button.addEventListener("click", function () {
-        if (!questionField) {
-          return;
-        }
+        if (!questionField || !chatForm) return;
         questionField.value = button.dataset.prompt || "";
-        questionField.focus();
+        chatForm.submit();
       });
     });
   </script>

@@ -46,24 +46,24 @@
 {% block content %}
   <section class="hero">
     <span class="eyebrow">Student Dashboard</span>
-    <h1>{{ request.user.username }}'s learning overview</h1>
-    <p>Use this page to show saved progress, subject performance, and current study status during the MVP demo.</p>
+    <h1>Welcome back, {{ request.user.username }}</h1>
+    <p>Here is your learning progress. Keep practising to improve your scores.</p>
     <div class="actions">
-      <a class="btn" href="{% url 'study_assistant' %}">Open Study Assistant</a>
+      <a class="btn" href="{% url 'study_assistant' %}">Continue Learning</a>
       <a class="btn secondary" href="{% url 'offline_library' %}">Open Offline Library</a>
     </div>
   </section>
 
   <section class="card stack">
-    <h2>Demo Snapshot</h2>
+    <h2>Quick Actions</h2>
     <div class="mini-grid two-up">
       <div class="soft-card">
-        <p class="kicker">Show This To Mentors</p>
-        <p>Use this dashboard after answering a practice question to demonstrate that EduAccess keeps learner progress beyond a single chat message.</p>
+        <p class="kicker">Keep Practising</p>
+        <p>Open the study assistant to answer a Maths or English practice question and improve your score.</p>
       </div>
       <div class="soft-card">
-        <p class="kicker">Suggested Next Click</p>
-        <p>Open the study assistant, answer one Maths or English practice question, then return here to show updated performance.</p>
+        <p class="kicker">Study Offline</p>
+        <p>Download a subject pack from the offline library so you can study without internet access.</p>
       </div>
     </div>
   </section>
