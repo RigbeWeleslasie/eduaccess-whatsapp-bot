@@ -1,0 +1,193 @@
+{% extends "whatsapp_bot/base_pwa.html" %}
+
+{% block title %}EduAccess — Your AI Study Tutor{% endblock %}
+
+{% block extra_head %}
+  <style>
+    .landing-hero {
+      padding: 36px 28px;
+      margin-bottom: 24px;
+      text-align: center;
+      background: var(--panel);
+      border-radius: 24px;
+      border: 1px solid rgba(15, 118, 110, 0.12);
+      box-shadow: 0 14px 36px rgba(32, 48, 60, 0.08);
+    }
+    .landing-hero h1 {
+      font-size: clamp(1.6rem, 5vw, 2.4rem);
+      margin-bottom: 14px;
+      line-height: 1.2;
+    }
+    .landing-hero p {
+      font-size: 1.05rem;
+      max-width: 520px;
+      margin: 0 auto 24px;
+    }
+    .landing-hero .actions {
+      justify-content: center;
+    }
+    .features-grid {
+      display: grid;
+      gap: 14px;
+    }
+    .feature-card {
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 14px;
+      align-items: start;
+      padding: 18px 20px;
+      background: var(--panel);
+      border-radius: 18px;
+      border: 1px solid rgba(15, 118, 110, 0.1);
+      box-shadow: 0 8px 24px rgba(32, 48, 60, 0.06);
+    }
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: var(--brand-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .feature-icon svg {
+      width: 24px;
+      height: 24px;
+      stroke: var(--brand);
+    }
+    .feature-body h3 {
+      margin: 0 0 4px;
+      font-size: 1rem;
+      color: var(--ink);
+    }
+    .feature-body p {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+    .cta-footer {
+      text-align: center;
+      padding: 28px 20px;
+      background: var(--panel);
+      border-radius: 20px;
+      border: 1px solid rgba(15, 118, 110, 0.1);
+      box-shadow: 0 8px 24px rgba(32, 48, 60, 0.06);
+    }
+    .cta-footer p {
+      margin: 0 0 18px;
+      font-size: 1rem;
+    }
+    .cta-footer .actions {
+      justify-content: center;
+    }
+    @media (min-width: 600px) {
+      .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <section class="landing-hero">
+    <span class="eyebrow">Free for students</span>
+    <h1>Learn Maths and English with your own AI tutor</h1>
+    <p>EduAccess gives every student a personal tutor in their pocket — ask questions, practise topics, and study offline, anytime.</p>
+    <div class="actions">
+      <a class="btn" href="{% url 'register' %}">Create Free Account</a>
+      <a class="btn secondary" href="{% url 'login' %}">I already have an account</a>
+    </div>
+  </section>
+
+  <section class="features-grid">
+
+    <div class="feature-card">
+      <div class="feature-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+      </div>
+      <div class="feature-body">
+        <h3>Ask the AI tutor anything</h3>
+        <p>Type any Maths or English question and get a clear, step-by-step explanation — like having a tutor available 24/7.</p>
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="9 11 12 14 22 4"/>
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+        </svg>
+      </div>
+      <div class="feature-body">
+        <h3>Practise and get instant feedback</h3>
+        <p>Answer Maths and English practice questions, get immediate feedback, and watch your score improve over time.</p>
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+        </svg>
+      </div>
+      <div class="feature-body">
+        <h3>Study offline, no internet needed</h3>
+        <p>Download subject packs and audio lessons to your phone. Keep studying even when you have no data or Wi-Fi.</p>
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+          <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+        </svg>
+      </div>
+      <div class="feature-body">
+        <h3>Listen to audio lessons</h3>
+        <p>Prefer to listen? Every study pack comes with an audio lesson you can play back anywhere, at your own pace.</p>
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="18" y1="20" x2="18" y2="10"/>
+          <line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+      </div>
+      <div class="feature-body">
+        <h3>Track your progress</h3>
+        <p>Your practice scores and topics are saved to your account so you can see exactly how far you have come.</p>
+      </div>
+    </div>
+
+    {% if whatsapp_cta.is_configured %}
+    <div class="feature-card">
+      <div class="feature-icon" style="background: rgba(24,179,138,0.12);">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="stroke:#18b38a;">
+          <path d="M19.05 4.94A9.93 9.93 0 0 0 12 2C6.49 2 2 6.48 2 12c0 1.76.46 3.49 1.33 5.01L2 22l5.12-1.3A9.96 9.96 0 0 0 12 22c5.51 0 10-4.48 10-10 0-2.67-1.04-5.18-2.95-7.06Z"/>
+        </svg>
+      </div>
+      <div class="feature-body">
+        <h3>Also works on WhatsApp</h3>
+        <p>No smartphone app to install. Send the same questions directly on WhatsApp and get tutor replies there too.</p>
+      </div>
+    </div>
+    {% endif %}
+
+  </section>
+
+  <section class="cta-footer">
+    <p>Ready to start learning? It takes less than a minute to sign up.</p>
+    <div class="actions">
+      <a class="btn" href="{% url 'register' %}">Create Free Account</a>
+      <a class="btn secondary" href="{% url 'login' %}">Login</a>
+    </div>
+  </section>
+{% endblock %}

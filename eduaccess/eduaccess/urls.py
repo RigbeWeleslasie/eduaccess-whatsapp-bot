@@ -22,6 +22,7 @@ from whatsapp_bot.views import (
     audio_pack_player,
     audio_pack_transcript_download,
     dashboard_page,
+    landing_page,
     learning_pack_download,
     offline_fallback_page,
     offline_library_page,
@@ -30,13 +31,15 @@ from whatsapp_bot.views import (
     service_worker,
     study_assistant_api,
     study_assistant_page,
+    welcome_page,
     whatsapp_webhook,
 )
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', EduAccessLoginView.as_view(), name='home'),
+    path('', landing_page, name='home'),
     path('register/', register_page, name='register'),
+    path('welcome/', welcome_page, name='welcome'),
     path('login/', EduAccessLoginView.as_view(), name='login'),
     path('logout/', EduAccessLogoutView.as_view(), name='logout'),
     path('dashboard/', dashboard_page, name='dashboard'),

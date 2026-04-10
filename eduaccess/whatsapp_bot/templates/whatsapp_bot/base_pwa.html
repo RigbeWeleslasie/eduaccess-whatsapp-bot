@@ -18,6 +18,10 @@
       --brand: #0f766e;
       --brand-soft: #d7f3ee;
       --accent: #f59e0b;
+      --nav-h: 0px;
+    }
+    body.has-nav {
+      --nav-h: 64px;
     }
     * {
       box-sizing: border-box;
@@ -33,7 +37,7 @@
     main {
       max-width: 960px;
       margin: 0 auto;
-      padding: 24px 16px 48px;
+      padding: 24px 16px calc(var(--nav-h) + 32px);
     }
     .topbar {
       max-width: 960px;
@@ -282,46 +286,121 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
+    /* ── Bottom navigation bar ── */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      height: var(--nav-h);
+      background: rgba(255, 253, 247, 0.96);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-top: 1px solid rgba(15, 118, 110, 0.12);
+      display: flex;
+      align-items: stretch;
+      justify-content: space-around;
+      padding: 0 4px;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .nav-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      flex: 1;
+      padding: 8px 4px;
+      text-decoration: none;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      border-radius: 14px;
+      margin: 6px 2px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .nav-tab svg {
+      width: 22px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+    .nav-tab:hover {
+      color: var(--brand);
+      background: var(--brand-soft);
+    }
+    .nav-tab.active {
+      color: var(--brand);
+      background: var(--brand-soft);
+    }
+    .nav-tab.active svg {
+      stroke: var(--brand);
+    }
+    /* simplified topbar for logged-in state */
+    .topbar-auth {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
   </style>
   {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body{% if request.user.is_authenticated %} class="has-nav"{% endif %}>
   <div class="topbar">
     {% if request.user.is_authenticated %}
-      <a class="topbar-brand" href="{% url 'offline_library' %}">EduAccess</a>
-    {% else %}
-      <a class="topbar-brand" href="{% url 'login' %}?next={{ request.path }}">EduAccess</a>
-    {% endif %}
-    <div class="topbar-links">
-      {% if whatsapp_cta.is_configured %}
-        <a class="btn whatsapp" href="{{ whatsapp_cta.join_url }}" target="_blank" rel="noopener">
-          <span class="btn-label">
-            <span class="btn-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" role="img" focusable="false">
-                <path d="M19.05 4.94A9.93 9.93 0 0 0 12 2C6.49 2 2 6.48 2 12c0 1.76.46 3.49 1.33 5.01L2 22l5.12-1.3A9.96 9.96 0 0 0 12 22c5.51 0 10-4.48 10-10 0-2.67-1.04-5.18-2.95-7.06ZM12 20.2a8.2 8.2 0 0 1-4.18-1.15l-.3-.18-3.04.77.81-2.96-.2-.31A8.18 8.18 0 0 1 3.8 12c0-4.52 3.68-8.2 8.2-8.2 2.19 0 4.24.85 5.8 2.4A8.14 8.14 0 0 1 20.2 12c0 4.52-3.68 8.2-8.2 8.2Zm4.5-6.12c-.25-.13-1.5-.74-1.73-.82-.23-.08-.4-.13-.57.13-.17.25-.65.82-.8.99-.15.17-.29.19-.54.06-.25-.13-1.06-.39-2.01-1.25-.74-.66-1.24-1.47-1.39-1.72-.15-.25-.02-.38.11-.5.12-.12.25-.29.38-.43.13-.15.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.57-1.37-.78-1.88-.21-.5-.42-.43-.57-.44h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.09s.9 2.42 1.02 2.58c.12.17 1.76 2.68 4.26 3.76.59.26 1.06.41 1.42.53.6.19 1.15.16 1.58.1.48-.07 1.5-.61 1.71-1.2.21-.59.21-1.1.15-1.2-.06-.1-.23-.16-.48-.29Z"/>
-              </svg>
-            </span>
-            Open WhatsApp
-          </span>
-        </a>
-      {% endif %}
-      {% if request.user.is_authenticated %}
-        <span class="topbar-note">Signed in as {{ request.user.username }}</span>
-        <a class="btn secondary" href="{% url 'dashboard' %}">Dashboard</a>
-        <a class="btn secondary" href="{% url 'study_assistant' %}">Study Assistant</a>
+      <a class="topbar-brand" href="{% url 'study_assistant' %}">EduAccess</a>
+      <div class="topbar-auth">
+        <span class="topbar-note">{{ request.user.username }}</span>
         <form method="post" action="{% url 'logout' %}">
           {% csrf_token %}
-          <button class="btn secondary" type="submit">Logout</button>
+          <button class="btn secondary" type="submit" style="min-width:0;padding:8px 14px;font-size:13px;">Logout</button>
         </form>
-      {% else %}
+      </div>
+    {% else %}
+      <a class="topbar-brand" href="{% url 'login' %}?next={{ request.path }}">EduAccess</a>
+      <div class="topbar-auth">
         <a class="btn secondary" href="{% url 'login' %}?next={{ request.path }}">Login</a>
         <a class="btn" href="{% url 'register' %}">Create Account</a>
-      {% endif %}
-    </div>
+      </div>
+    {% endif %}
   </div>
   <main>
     {% block content %}{% endblock %}
   </main>
+
+  {% if request.user.is_authenticated %}
+    {% url 'study_assistant' as url_study %}
+    {% url 'offline_library' as url_library %}
+    {% url 'dashboard' as url_dashboard %}
+    <nav class="bottom-nav" aria-label="Main navigation">
+
+      <a class="nav-tab{% if request.path == url_study %} active{% endif %}" href="{{ url_study }}" aria-label="Study">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        Study
+      </a>
+
+      <a class="nav-tab{% if request.path == url_library %} active{% endif %}" href="{{ url_library }}" aria-label="Library">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+        </svg>
+        Library
+      </a>
+
+      <a class="nav-tab{% if request.path == url_dashboard %} active{% endif %}" href="{{ url_dashboard }}" aria-label="Dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="18" y1="20" x2="18" y2="10"/>
+          <line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+        Progress
+      </a>
+
+    </nav>
+  {% endif %}
   <script>
     const isLocalDevHost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
 

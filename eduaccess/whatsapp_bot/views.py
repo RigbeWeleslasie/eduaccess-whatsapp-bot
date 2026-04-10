@@ -894,9 +894,20 @@ def register_page(request):
     if request.method == "POST" and form.is_valid():
         user = form.save()
         login(request, user)
-        return redirect("study_assistant")
+        return redirect("welcome")
 
     return render(request, "whatsapp_bot/register.html", {"form": form})
+
+
+@login_required
+def welcome_page(request):
+    return render(request, "whatsapp_bot/welcome.html")
+
+
+def landing_page(request):
+    if request.user.is_authenticated:
+        return redirect("study_assistant")
+    return render(request, "whatsapp_bot/landing.html")
 
 
 class EduAccessLoginView(LoginView):
@@ -928,6 +939,18 @@ def study_assistant_page(request):
     session_key = "study_assistant_history"
     history = request.session.get(session_key, [])
     progress, practice_state = _load_user_practice_state(request.user)
+
+    # Allow welcome page links like ?prompt=practice+maths to auto-fire a question
+    prompt_from_url = request.GET.get("prompt", "").strip()
+    if prompt_from_url and request.method == "GET":
+        reply = _build_tutor_reply(request, prompt_from_url, practice_state)
+        history = [
+            *history,
+            {"role": "student", "text": prompt_from_url},
+            {"role": "assistant", "text": reply},
+        ][-12:]
+        _save_user_practice_state(progress, practice_state)
+        request.session[session_key] = history
 
     if request.method == "POST":
         if "clear" in request.POST:

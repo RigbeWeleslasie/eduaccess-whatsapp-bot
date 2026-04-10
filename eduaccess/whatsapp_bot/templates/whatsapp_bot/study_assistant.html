@@ -228,7 +228,7 @@
     }
     .composer-card {
       position: sticky;
-      bottom: 0;
+      bottom: var(--nav-h, 0px);
       z-index: 2;
       padding: 18px 22px 22px;
       background: rgba(255, 253, 247, 0.94);
@@ -307,7 +307,7 @@
     <h1>What do you want to learn today?</h1>
     <p>Ask any question, practise Maths or English, or grab an offline study pack - all in one place.</p>
     <div class="actions">
-      <a class="btn secondary" href="{% url 'offline_library' %}">Open Offline Library</a>
+      <a class="btn secondary" href="{% url 'offline_library' %}">Open Library</a>
     </div>
   </section>
 
