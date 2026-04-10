@@ -203,7 +203,7 @@
   <section class="landing-hero">
     <span class="eyebrow">Free for every student</span>
     <h1>Your personal AI tutor for Maths and English</h1>
-    <p class="lead">EduAccess is a free learning tool that gives every secondary school student access to a tutor — whether they have reliable internet or not, and whether they can afford a private tutor or not.</p>
+    <p class="lead">EduAccess is a free learning tool that gives every secondary school student access to a tutor - whether they have reliable internet or not, and whether they can afford a private tutor or not.</p>
     <p class="sub">Ask questions, practise topics, get feedback, and download lessons to your phone. All in one place.</p>
     <div class="actions">
       <a class="btn" href="{% url 'register' %}">Start Learning Free</a>
@@ -211,11 +211,11 @@
     </div>
   </section>
 
-  <!-- What is EduAccess -->
+  <!-- What is EduAccess -->/study-assistant/
   <section class="what-section">
     <h2>What is EduAccess?</h2>
-    <p>EduAccess is an AI-powered study assistant built specifically for secondary school students. It covers the two subjects that matter most in exams — <strong>Maths</strong> and <strong>English</strong> — and acts like a patient, always-available tutor.</p>
-    <p>You can type a question in plain language — "explain passive voice", "solve 3x + 6 = 18", "what is a fraction?" — and get a clear, step-by-step answer instantly. No waiting, no judgement, no cost.</p>
+    <p>EduAccess is an AI-powered study assistant built specifically for secondary school students. It covers the two subjects that matter most in exams - <strong>Maths</strong> and <strong>English</strong> - and acts like a patient, always-available tutor.</p>
+    <p>You can type a question in plain language - "explain passive voice", "solve 3x + 6 = 18", "what is a fraction?" - and get a clear, step-by-step answer instantly. No waiting, no judgement, no cost.</p>
     <p>EduAccess also works on <strong>WhatsApp</strong>, so students who do not have a smartphone app can still get the same tutor experience through a platform they already use every day.</p>
   </section>
 
@@ -223,11 +223,11 @@
   <div class="who-grid">
     <div class="who-card">
       <h3>Students without a private tutor</h3>
-      <p>Private tutoring is expensive. EduAccess gives every student the same quality of help — explanations, examples, and practice — completely free.</p>
+      <p>Private tutoring is expensive. EduAccess gives every student the same quality of help - explanations, examples, and practice - completely free.</p>
     </div>
     <div class="who-card">
       <h3>Students with limited internet</h3>
-      <p>Download study packs and audio lessons to your phone once, then study them anywhere — even with no data or Wi-Fi connection.</p>
+      <p>Download study packs and audio lessons to your phone once, then study them anywhere - even with no data or Wi-Fi connection.</p>
     </div>
     <div class="who-card">
       <h3>Students preparing for exams</h3>
@@ -277,7 +277,7 @@
       </div>
       <div class="feature-body">
         <h3>Download packs for offline study</h3>
-        <p>Save complete topic guides — notes, examples, and practice questions — to your phone so you can study without any internet.</p>
+        <p>Save complete topic guides - notes, examples, and practice questions - to your phone so you can study without any internet.</p>
       </div>
     </div>
 
@@ -290,7 +290,7 @@
       </div>
       <div class="feature-body">
         <h3>Listen to audio lessons</h3>
-        <p>Every topic pack comes with a full spoken lesson. Play it on the bus, at home, or anywhere — no reading required.</p>
+        <p>Every topic pack comes with a full spoken lesson. Play it on the bus, at home, or anywhere - no reading required.</p>
       </div>
     </div>
 
@@ -358,6 +358,30 @@
       </div>
     </div>
   </section>
+
+  <!-- WhatsApp section -->
+  {% if whatsapp_cta.is_configured %}
+  <section class="whatsapp-card" style="margin-bottom:20px;padding:28px 24px;">
+    <p class="kicker" style="margin-bottom:10px;">No app download needed</p>
+    <h2 style="margin-bottom:8px;">Learn via WhatsApp too</h2>
+    <p style="margin-bottom:16px;">If you prefer WhatsApp, you can use EduAccess directly there — ask questions, practise topics, and get the same AI tutor responses without ever opening a browser. Just send a message to get started.</p>
+    <p class="whatsapp-number">{{ whatsapp_cta.number }}</p>
+    <p style="margin:6px 0 4px;font-size:14px;">Send this code first to join:</p>
+    <p style="margin-bottom:18px;"><span class="whatsapp-code">{{ whatsapp_cta.join_code }}</span></p>
+    <div class="actions">
+      <a class="btn whatsapp" href="{{ whatsapp_cta.join_url }}" target="_blank" rel="noopener">
+        <span class="btn-label">
+          <span class="btn-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" role="img" focusable="false">
+              <path d="M19.05 4.94A9.93 9.93 0 0 0 12 2C6.49 2 2 6.48 2 12c0 1.76.46 3.49 1.33 5.01L2 22l5.12-1.3A9.96 9.96 0 0 0 12 22c5.51 0 10-4.48 10-10 0-2.67-1.04-5.18-2.95-7.06ZM12 20.2a8.2 8.2 0 0 1-4.18-1.15l-.3-.18-3.04.77.81-2.96-.2-.31A8.18 8.18 0 0 1 3.8 12c0-4.52 3.68-8.2 8.2-8.2 2.19 0 4.24.85 5.8 2.4A8.14 8.14 0 0 1 20.2 12c0 4.52-3.68 8.2-8.2 8.2Zm4.5-6.12c-.25-.13-1.5-.74-1.73-.82-.23-.08-.4-.13-.57.13-.17.25-.65.82-.8.99-.15.17-.29.19-.54.06-.25-.13-1.06-.39-2.01-1.25-.74-.66-1.24-1.47-1.39-1.72-.15-.25-.02-.38.11-.5.12-.12.25-.29.38-.43.13-.15.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.57-1.37-.78-1.88-.21-.5-.42-.43-.57-.44h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.09s.9 2.42 1.02 2.58c.12.17 1.76 2.68 4.26 3.76.59.26 1.06.41 1.42.53.6.19 1.15.16 1.58.1.48-.07 1.5-.61 1.71-1.2.21-.59.21-1.1.15-1.2-.06-.1-.23-.16-.48-.29Z"/>
+            </svg>
+          </span>
+          Join on WhatsApp
+        </span>
+      </a>
+    </div>
+  </section>
+  {% endif %}
 
   <!-- Final CTA -->
   <section class="cta-footer">
