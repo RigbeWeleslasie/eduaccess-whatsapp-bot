@@ -711,7 +711,9 @@ def _build_tutor_reply(request, incoming_msg, practice_state):
         if inferred_topic:
             return f"{ai_reply}{_build_topic_resource_lines(request, inferred_subject, inferred_topic)}"
         return ai_reply
-    except Exception:
+    except Exception as ai_exc:
+        print(f"[ask_ai] failed for message={incoming_msg!r} subject={inferred_subject} topic={inferred_topic} error={ai_exc}")
+        traceback.print_exc()
         if local_answer:
             local_subject = local_answer.get("subject")
             local_topic = local_answer.get("topic")

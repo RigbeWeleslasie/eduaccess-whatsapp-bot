@@ -213,20 +213,190 @@ TOPIC_ALIASES = {
 }
 
 LOCAL_TUTOR_KNOWLEDGE = [
-    {"subject": "maths", "keywords": ["derivative", "differentiate", "differentiation", "rate of change"], "topic": "calculus"},
-    {"subject": "maths", "keywords": ["linear equation", "linear equations", "solve for x", "unknown value"], "topic": "linear equations"},
-    {"subject": "maths", "keywords": ["algebra", "expression", "equation"], "topic": "algebra"},
-    {"subject": "maths", "keywords": ["fraction", "fractions", "numerator", "denominator"], "topic": "fractions"},
-    {"subject": "maths", "keywords": ["percentage", "percentages", "percent"], "topic": "percentages"},
-    {"subject": "maths", "keywords": ["ratio", "ratios"], "topic": "ratios"},
-    {"subject": "maths", "keywords": ["trigonometry", "sine", "cosine", "tangent"], "topic": "trigonometry"},
-    {"subject": "english", "keywords": ["passive voice", "active voice"], "topic": "passive voice"},
-    {"subject": "english", "keywords": ["reported speech", "indirect speech", "direct speech"], "topic": "reported speech"},
-    {"subject": "english", "keywords": ["adjective", "adjectives"], "topic": "adjectives"},
-    {"subject": "english", "keywords": ["tense", "tenses", "past tense", "present tense", "future tense"], "topic": "tenses"},
-    {"subject": "english", "keywords": ["noun", "nouns"], "topic": "parts of speech"},
-    {"subject": "english", "keywords": ["verb", "verbs"], "topic": "parts of speech"},
-    {"subject": "english", "keywords": ["conjunction", "conjunctions"], "topic": "conjunctions"},
+    {
+        "subject": "maths",
+        "keywords": ["derivative", "differentiate", "differentiation", "rate of change"],
+        "topic": "calculus",
+        "explanation": (
+            "Differentiation finds the rate at which a function changes.\n\n"
+            "The basic rule: if y = xⁿ, then dy/dx = nxⁿ⁻¹\n\n"
+            "Example: y = x³  →  dy/dx = 3x²\n\n"
+            "Steps:\n"
+            "1. Bring the power down as a multiplier\n"
+            "2. Reduce the power by 1\n"
+            "3. Simplify\n\n"
+            "For a constant (e.g. y = 5), the derivative is 0 because a constant does not change."
+        ),
+    },
+    {
+        "subject": "maths",
+        "keywords": ["linear equation", "linear equations", "solve for x", "unknown value"],
+        "topic": "linear equations",
+        "explanation": (
+            "A linear equation has one unknown (usually x) and no powers higher than 1.\n\n"
+            "Rule: whatever you do to one side, do the same to the other side.\n\n"
+            "Example: 2x + 5 = 11\n"
+            "  Subtract 5 from both sides: 2x = 6\n"
+            "  Divide both sides by 2: x = 3\n\n"
+            "Always check by substituting back: 2(3) + 5 = 11 ✓"
+        ),
+    },
+    {
+        "subject": "maths",
+        "keywords": ["algebra", "expression", "equation"],
+        "topic": "algebra",
+        "explanation": (
+            "Algebra uses letters (like x or y) to represent unknown numbers.\n\n"
+            "Key rules:\n"
+            "- Like terms can be added: 3x + 2x = 5x\n"
+            "- Unlike terms cannot: 3x + 2y stays as 3x + 2y\n"
+            "- To solve for x, isolate it on one side\n\n"
+            "Example: 3x - 4 = 11\n"
+            "  Add 4 to both sides: 3x = 15\n"
+            "  Divide by 3: x = 5"
+        ),
+    },
+    {
+        "subject": "maths",
+        "keywords": ["fraction", "fractions", "numerator", "denominator"],
+        "topic": "fractions",
+        "explanation": (
+            "A fraction shows a part of a whole. The top number is the numerator, the bottom is the denominator.\n\n"
+            "Adding fractions: make the denominators the same first.\n"
+            "  1/4 + 1/2 = 1/4 + 2/4 = 3/4\n\n"
+            "Multiplying fractions: multiply top × top and bottom × bottom.\n"
+            "  2/3 × 3/4 = 6/12 = 1/2\n\n"
+            "Dividing fractions: flip the second fraction and multiply.\n"
+            "  2/3 ÷ 4/5 = 2/3 × 5/4 = 10/12 = 5/6"
+        ),
+    },
+    {
+        "subject": "maths",
+        "keywords": ["percentage", "percentages", "percent"],
+        "topic": "percentages",
+        "explanation": (
+            "A percentage is a number out of 100.\n\n"
+            "To find a percentage of an amount:\n"
+            "  15% of 200 = (15 ÷ 100) × 200 = 30\n\n"
+            "To convert a fraction to a percentage:\n"
+            "  3/4 = (3 ÷ 4) × 100 = 75%\n\n"
+            "Percentage increase/decrease:\n"
+            "  Increase 80 by 20%: 80 × 1.20 = 96\n"
+            "  Decrease 80 by 20%: 80 × 0.80 = 64"
+        ),
+    },
+    {
+        "subject": "maths",
+        "keywords": ["ratio", "ratios"],
+        "topic": "ratios",
+        "explanation": (
+            "A ratio compares two or more quantities.\n\n"
+            "Example: ratio 3:2 means for every 3 of one thing, there are 2 of another.\n\n"
+            "Sharing in a ratio:\n"
+            "  Share 40 in the ratio 3:2\n"
+            "  Total parts = 3 + 2 = 5\n"
+            "  One part = 40 ÷ 5 = 8\n"
+            "  Shares: 3 × 8 = 24 and 2 × 8 = 16\n\n"
+            "Always simplify ratios where possible: 6:4 = 3:2"
+        ),
+    },
+    {
+        "subject": "maths",
+        "keywords": ["trigonometry", "sine", "cosine", "tangent"],
+        "topic": "trigonometry",
+        "explanation": (
+            "Trigonometry studies the relationship between angles and sides in right-angled triangles.\n\n"
+            "The three main ratios (remember SOH-CAH-TOA):\n"
+            "  sin(θ) = Opposite ÷ Hypotenuse\n"
+            "  cos(θ) = Adjacent ÷ Hypotenuse\n"
+            "  tan(θ) = Opposite ÷ Adjacent\n\n"
+            "Example: In a right triangle with angle 30°, hypotenuse = 10:\n"
+            "  Opposite = sin(30°) × 10 = 0.5 × 10 = 5"
+        ),
+    },
+    {
+        "subject": "english",
+        "keywords": ["passive voice", "active voice"],
+        "topic": "passive voice",
+        "explanation": (
+            "Passive voice shifts the focus from who does the action to what receives the action.\n\n"
+            "Active:  The teacher marked the papers.\n"
+            "Passive: The papers were marked by the teacher.\n\n"
+            "How to form the passive:\n"
+            "  Subject + to be (correct tense) + past participle\n\n"
+            "More examples:\n"
+            "  Active:  They built the bridge in 1990.\n"
+            "  Passive: The bridge was built in 1990.\n\n"
+            "  Active:  Someone has stolen my bag.\n"
+            "  Passive: My bag has been stolen.\n\n"
+            "Use passive voice when the doer is unknown, unimportant, or obvious from context."
+        ),
+    },
+    {
+        "subject": "english",
+        "keywords": ["reported speech", "indirect speech", "direct speech"],
+        "topic": "reported speech",
+        "explanation": (
+            "Reported speech conveys what someone said without quoting them directly.\n\n"
+            "Direct:   She said, \"I am tired.\"\n"
+            "Reported: She said that she was tired.\n\n"
+            "Key changes when reporting:\n"
+            "  am/is → was,  are → were\n"
+            "  will → would,  can → could\n"
+            "  now → then,  today → that day,  here → there\n\n"
+            "For questions:\n"
+            "  Direct:   He asked, \"Where do you live?\"\n"
+            "  Reported: He asked where I lived.\n\n"
+            "Note: no question mark in reported questions, and word order becomes normal (subject before verb)."
+        ),
+    },
+    {
+        "subject": "english",
+        "keywords": ["adjective", "adjectives"],
+        "topic": "adjectives",
+        "explanation": (
+            "Adjectives describe or modify nouns.\n\n"
+            "Examples: a tall building, a cold day, the red car\n\n"
+            "Order of adjectives (before a noun):\n"
+            "  Opinion → Size → Age → Shape → Colour → Origin → Material\n"
+            "  e.g. a lovely small old round brown French wooden box\n\n"
+            "Comparative (comparing two): taller, more expensive\n"
+            "Superlative (comparing three or more): tallest, most expensive\n\n"
+            "Adjectives can also follow a linking verb:\n"
+            "  The soup is hot. She feels tired."
+        ),
+    },
+    {
+        "subject": "english",
+        "keywords": ["tense", "tenses", "past tense", "present tense", "future tense"],
+        "topic": "tenses",
+        "explanation": (
+            "Tenses show when an action happens.\n\n"
+            "Simple Present: I walk to school. (routine or fact)\n"
+            "Present Continuous: I am walking. (happening now)\n"
+            "Simple Past: I walked yesterday. (completed action)\n"
+            "Past Continuous: I was walking when it rained. (ongoing past action)\n"
+            "Present Perfect: I have walked 5 km. (past action with present relevance)\n"
+            "Simple Future: I will walk tomorrow. (future plan)\n\n"
+            "Tip: the auxiliary verb (am/is/are/was/were/have/will) tells you the tense."
+        ),
+    },
+    {
+        "subject": "english",
+        "keywords": ["noun", "nouns", "verb", "verbs", "conjunction", "conjunctions"],
+        "topic": "parts of speech",
+        "explanation": (
+            "Parts of speech are the categories every word belongs to.\n\n"
+            "Noun: names a person, place, or thing. (teacher, Lagos, happiness)\n"
+            "Verb: shows an action or state. (run, think, is)\n"
+            "Adjective: describes a noun. (tall, happy, red)\n"
+            "Adverb: modifies a verb, adjective, or other adverb. (quickly, very, well)\n"
+            "Pronoun: replaces a noun. (he, she, they, it)\n"
+            "Preposition: shows relationship. (in, on, at, before)\n"
+            "Conjunction: joins words or clauses. (and, but, because, although)\n"
+            "Interjection: an exclamation. (Oh! Wow! Yes!)"
+        ),
+    },
 ]
 
 
@@ -555,8 +725,19 @@ def _parse_quadratic_expression(expression, variable):
     return quadratic, linear, constant
 
 
+_EQUATION_PREFIX = re.compile(
+    r"^\s*(?:solve|find|calculate|work\s+out|evaluate|simplify|compute)\s*[:\-]?\s*",
+    re.IGNORECASE,
+)
+
+
+def _strip_equation_prefix(text):
+    """Remove common instruction words before the actual equation."""
+    return _EQUATION_PREFIX.sub("", text).strip()
+
+
 def looks_like_linear_equation_question(question):
-    normalized = question.strip().lower()
+    normalized = _strip_equation_prefix(question).lower()
     if "^2" in normalized or "²" in normalized:
         return False
     if normalized.count("=") != 1:
@@ -576,7 +757,7 @@ def looks_like_linear_equation_question(question):
 
 
 def looks_like_quadratic_equation_question(question):
-    normalized = question.strip().lower().replace("²", "^2")
+    normalized = _strip_equation_prefix(question).lower().replace("²", "^2")
     if normalized.count("=") != 1:
         return False
 
@@ -592,7 +773,7 @@ def solve_linear_equation(question):
     if not looks_like_linear_equation_question(question):
         return None
 
-    normalized = question.strip().lower().replace("^1", "")
+    normalized = _strip_equation_prefix(question).strip().lower().replace("^1", "")
     variable = re.findall(r"[a-z]", normalized)[0]
     left_side, right_side = [part.strip() for part in normalized.split("=", 1)]
 
@@ -634,7 +815,7 @@ def solve_quadratic_equation(question):
     if not looks_like_quadratic_equation_question(question):
         return None
 
-    normalized = question.strip().lower().replace("²", "^2")
+    normalized = _strip_equation_prefix(question).strip().lower().replace("²", "^2")
     variable = re.findall(r"[a-z]", normalized)[0]
     left_side, right_side = [part.strip() for part in normalized.split("=", 1)]
 
@@ -710,20 +891,22 @@ def build_local_tutor_answer(question):
     for entry in LOCAL_TUTOR_KNOWLEDGE:
         if any(_keyword_in_text(keyword, normalized) for keyword in entry["keywords"]):
             topic_title = _titleize_topic(entry["topic"])
-            if entry["subject"] == "maths":
-                answer = (
-                    f"{topic_title} is a Maths topic. Start by identifying the rule or formula being used, "
-                    "work through one example step by step, and then check the final answer carefully."
-                )
-            else:
-                answer = (
-                    f"{topic_title} is an English topic. Start with the main rule, study a correct example, "
-                    "and then practise writing or changing sentences using the same pattern."
-                )
+            explanation = entry.get("explanation")
+            if not explanation:
+                if entry["subject"] == "maths":
+                    explanation = (
+                        f"{topic_title} is a Maths topic. Start by identifying the rule or formula being used, "
+                        "work through one example step by step, and then check the final answer carefully."
+                    )
+                else:
+                    explanation = (
+                        f"{topic_title} is an English topic. Start with the main rule, study a correct example, "
+                        "and then practise writing or changing sentences using the same pattern."
+                    )
             return {
                 "subject": entry["subject"],
                 "topic": entry["topic"],
-                "answer": answer,
+                "answer": explanation,
             }
 
     resolved_subject, resolved_topic = resolve_topic_from_text(question)
