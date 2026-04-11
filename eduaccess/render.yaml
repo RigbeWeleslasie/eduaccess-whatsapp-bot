@@ -12,8 +12,20 @@ services:
       - key: DJANGO_DEBUG
         value: "False"
       - key: DJANGO_ALLOWED_HOSTS
-        value: "eduaccess.onrender.com"
+        value: "eduaccess-whatsapp-bot-4hg5.onrender.com,eduaccess.onrender.com"
       - key: DJANGO_CSRF_TRUSTED_ORIGINS
-        value: "https://eduaccess.onrender.com"
+        value: "https://eduaccess-whatsapp-bot-4hg5.onrender.com,https://eduaccess.onrender.com"
+      - key: EMAIL_HOST
+        value: "smtp.gmail.com"
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_USE_TLS
+        value: "True"
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        value: "EduAccess <noreply@eduaccess.app>"
       - key: PYTHON_VERSION
         value: "3.10.16"

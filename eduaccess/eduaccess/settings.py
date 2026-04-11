@@ -178,12 +178,18 @@ LOGIN_URL = '/login/'
 LOGOUT_REDIRECT_URL = '/login/'
 
 # Email (configure EMAIL_HOST_USER and EMAIL_HOST_PASSWORD in env vars)
-EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+
+_default_backend = (
+    "django.core.mail.backends.smtp.EmailBackend"
+    if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD
+    else "django.core.mail.backends.console.EmailBackend"
+)
+EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", _default_backend)
 EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
-EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "EduAccess <noreply@eduaccess.app>")
 PASSWORD_RESET_TIMEOUT = 3600  # link expires after 1 hour
 
