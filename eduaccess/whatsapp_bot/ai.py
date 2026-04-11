@@ -17,6 +17,15 @@ load_dotenv(BASE_DIR / ".env", override=True)
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+
+# Set to True when a 429 is received so further calls skip Gemini immediately
+_gemini_quota_exceeded = False
+
+
+class GeminiQuotaError(RuntimeError):
+    """Raised when the Gemini free-tier daily quota is exhausted (HTTP 429)."""
+
+
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
 
@@ -509,8 +518,11 @@ def _extract_text(response_data):
 
 
 def _call_gemini(user_prompt, system_prompt=None):
+    global _gemini_quota_exceeded
     if not GEMINI_API_KEY:
         raise RuntimeError("GEMINI_API_KEY is not set.")
+    if _gemini_quota_exceeded:
+        raise GeminiQuotaError("Gemini daily quota already exhausted — skipping call.")
 
     contents = []
     if system_prompt:
@@ -539,6 +551,9 @@ def _call_gemini(user_prompt, system_prompt=None):
             response_data = json.loads(response.read().decode("utf-8"))
     except error.HTTPError as exc:
         error_body = exc.read().decode("utf-8", errors="replace")
+        if exc.code == 429:
+            _gemini_quota_exceeded = True
+            raise GeminiQuotaError(f"Gemini API error {exc.code}: {error_body}") from exc
         raise RuntimeError(f"Gemini API error {exc.code}: {error_body}") from exc
     except error.URLError as exc:
         raise RuntimeError(f"Gemini network error: {exc.reason}") from exc
@@ -640,13 +655,19 @@ def ask_ai(question, subject=None, topic=None):
             "- Return plain text only."
         )
 
-    return _call_gemini(
-        prompt,
-        system_prompt=(
-            "You are EduAccess, a helpful secondary school tutor for English and Maths. "
-            "Give direct educational answers that are suitable for students."
-        ),
-    )
+    try:
+        return _call_gemini(
+            prompt,
+            system_prompt=(
+                "You are EduAccess, a helpful secondary school tutor for English and Maths. "
+                "Give direct educational answers that are suitable for students."
+            ),
+        )
+    except GeminiQuotaError:
+        return (
+            "I'm sorry, the AI tutor has reached its daily limit and will be available again tomorrow. "
+            "In the meantime, try the Offline Library for revision packs and audio lessons on your topic."
+        )
 
 
 def _extension_from_content_type(content_type):
