@@ -64,6 +64,7 @@
           <button class="btn" type="submit" id="login-submit">Login</button>
           <a class="btn secondary" href="{% url 'register' %}">Create Account</a>
         </div>
+        <a href="{% url 'password_reset' %}" style="font-size:14px;color:var(--brand);font-weight:700;text-decoration:none;">Forgot your password?</a>
         <p class="submit-note" id="login-status" hidden>Signing you in...</p>
       </form>
     </article>

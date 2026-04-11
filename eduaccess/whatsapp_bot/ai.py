@@ -109,14 +109,111 @@ LOCAL_PRACTICE_QUESTIONS = {
     "maths": [
         ("Solve for x: x + 9 = 14", "x = 5"),
         ("Solve for y: 3y = 18", "y = 6"),
+        ("Solve for a: 2a - 4 = 10", "a = 7"),
+        ("Solve for b: b/3 = 5", "b = 15"),
+        ("Find the value of n: 5n + 2 = 27", "n = 5"),
+        ("Simplify: 4/12", "1/3"),
+        ("Simplify: 9/15", "3/5"),
+        ("What is 3/4 + 1/4?", "1"),
+        ("What is 2/3 + 1/6?", "5/6"),
+        ("Find 15% of 80.", "12"),
+        ("Find 25% of 200.", "50"),
+        ("What is 10% of 350?", "35"),
+        ("Simplify the ratio 6:9.", "2:3"),
+        ("Simplify the ratio 15:25.", "3:5"),
+        ("What is 2⁴?", "16"),
+        ("Simplify: 3² × 3³", "3⁵ or 243"),
+        ("What is the area of a rectangle with length 8 cm and width 5 cm?", "40 cm²"),
+        ("How many sides does a hexagon have?", "6"),
+        ("What is the perimeter of a square with side 7 cm?", "28 cm"),
+        ("What is the sum of angles in a triangle?", "180°"),
+        ("What is cos 0°?", "1"),
+        ("What is tan 45°?", "1"),
+        ("What is sin 30°?", "0.5"),
+        ("Solve: x² - 16 = 0", "x = 4 or x = -4"),
+        ("Solve: x² + 5x + 6 = 0", "x = -2 or x = -3"),
+        ("Solve the pair: x + y = 10 and x - y = 4", "x = 7, y = 3"),
+        ("Differentiate: y = 4x³", "dy/dx = 12x²"),
+        ("What is the LCM of 4 and 6?", "12"),
+        ("What is the HCF of 12 and 18?", "6"),
+        ("A car travels 120 km in 2 hours. What is its speed?", "60 km/h"),
+        ("Round 3.867 to 2 decimal places.", "3.87"),
+        ("Convert 0.75 to a fraction.", "3/4"),
+        ("Express 40% as a decimal.", "0.4"),
+        ("What is the mean of 4, 8, 6, 10?", "7"),
+        ("What is the median of 3, 7, 9, 11, 15?", "9"),
     ],
     "english": [
+        # Plurals
         ("Write the plural form of 'child'.", "children"),
+        ("Write the plural form of 'tooth'.", "teeth"),
+        ("Write the plural form of 'mouse'.", "mice"),
+        ("Write the plural form of 'leaf'.", "leaves"),
+        ("Write the plural form of 'man'.", "men"),
+        ("Write the plural form of 'woman'.", "women"),
+        ("Write the plural form of 'foot'.", "feet"),
+        ("Write the plural form of 'goose'.", "geese"),
+        # Passive voice
         ("Change to passive voice: The chef cooked the meal.", "The meal was cooked by the chef."),
+        ("Change to passive voice: The teacher marked the papers.", "The papers were marked by the teacher."),
+        ("Change to passive voice: Musa kicked the ball.", "The ball was kicked by Musa."),
+        ("Change to passive voice: The farmer planted the seeds.", "The seeds were planted by the farmer."),
+        ("Change to active voice: The song was sung by the choir.", "The choir sang the song."),
+        ("Change to active voice: The cake was eaten by the children.", "The children ate the cake."),
+        # Reported speech
+        ('Change to reported speech: She said, "I am happy."', "She said that she was happy."),
+        ('Change to reported speech: He said, "I will come tomorrow."', "He said that he would come the next day."),
+        ('Change to reported speech: Amina said, "I love reading."', "Amina said that she loved reading."),
+        # Tenses
+        ("Change to past tense: She walks to school every day.", "She walked to school every day."),
+        ("Change to past tense: He plays football.", "He played football."),
+        ("Change to future tense: They go to the market.", "They will go to the market."),
+        ("Change to present continuous: She read a book.", "She is reading a book."),
+        ("Change to past perfect: He eats his food.", "He had eaten his food."),
+        # Parts of speech
+        ("Identify the noun in this sentence: The teacher praised Musa.", "teacher"),
+        ("Identify the verb in this sentence: The dog barked loudly.", "barked"),
+        ("Identify the adjective in this sentence: The tall boy ran home.", "tall"),
+        ("Identify the adverb in this sentence: She spoke softly.", "softly"),
+        ("Identify the pronoun in this sentence: She opened the door.", "She"),
+        ("Identify the preposition: The book is on the table.", "on"),
+        ("Identify the conjunction: I went to school but my friend stayed home.", "but"),
+        ("Identify the interjection: Wow! That was amazing!", "Wow"),
+        # Vocabulary / synonyms / antonyms
+        ("Give one synonym for 'happy'.", "joyful / cheerful / glad"),
+        ("Give one antonym for 'beautiful'.", "ugly"),
+        ("Give one synonym for 'big'.", "large / huge / enormous"),
+        ("Give one antonym for 'brave'.", "cowardly"),
+        ("Give the meaning of 'benevolent'.", "kind and generous"),
+        ("Use 'diligent' in a sentence.", "She is a diligent student who always studies hard."),
+        # Punctuation / grammar
+        ("Add the correct punctuation: Where are you going", "Where are you going?"),
+        ("Which is correct: 'its' or 'it's' in: ___ a beautiful day?", "It's"),
+        ("Which is correct: 'their', 'there', or 'they're' in: ___ going to the market.", "They're"),
+        ("Choose the correct word: She (don't/doesn't) like coffee.", "doesn't"),
+        ("Choose the correct form: He (go/goes) to school every day.", "goes"),
+        # Comprehension skills
+        ("What is the main idea of a paragraph?", "The central or most important point the paragraph is about."),
+        ("What does 'skimming' mean when reading a text?", "Reading quickly to get the general idea."),
+        ("What does 'scanning' mean when reading a text?", "Looking through text quickly to find specific information."),
+        # Essay / letter writing
+        ("Name three main parts of an essay.", "Introduction, body, and conclusion."),
+        ("What is the purpose of a topic sentence?", "To introduce the main idea of a paragraph."),
+        ("What is one feature of a formal letter?", "It uses formal language and includes addresses and a proper greeting."),
+        ("What greeting is used in a formal letter to someone whose name you know?", "Dear [Name],"),
+        # Conjunctions / connectives
+        ("Choose the correct conjunction: I stayed indoors _____ it was raining. (because/and)", "because"),
+        ("Choose the correct conjunction: She was tired _____ she kept working. (so/but)", "but"),
+        ("Fill in: I will go _____ you come with me. (if/although)", "if"),
     ],
     "general": [
         ("Solve for x: x + 7 = 15", "x = 8"),
         ("Change to active voice: The song was sung by the choir.", "The choir sang the song."),
+        ("What is 30% of 90?", "27"),
+        ("Give one synonym for 'intelligent'.", "clever / smart"),
+        ("What is the plural of 'ox'?", "oxen"),
+        ("Solve for x: 4x = 20", "x = 5"),
+        ("Identify the verb: The cat sat on the mat.", "sat"),
     ],
 }
 
@@ -490,24 +587,59 @@ def _cache_generated_audio_pack(pack):
     return pack
 
 
+_SENTENCE_ANALYSIS_MARKERS = (
+    "in here", "in this sentence", "in the sentence", "in this example",
+    "in the above", "in the following", "find the", "identify the",
+    "identify all", "spot the", "underline the", "what is the",
+    "which word", "which words", "is there a", "are there any",
+)
+
+
+def is_sentence_analysis_question(question):
+    """True when the student is asking about a specific sentence, not a general topic."""
+    normalized = question.strip().lower()
+    if any(m in normalized for m in _SENTENCE_ANALYSIS_MARKERS):
+        return True
+    # Pattern: "some sentence, what/which/find..." — comma before a question word
+    if re.search(r".{10,},\s*(what|which|find|identify|is there|are there|how many)", normalized):
+        return True
+    return False
+
+
 def ask_ai(question, subject=None, topic=None):
     resolved_subject = subject or _infer_subject(question)
     resolved_topic = topic or resolve_topic_from_text(question, subject=subject)[1]
-    topic_line = f"Target topic: {resolved_topic}\n" if resolved_topic else ""
-    subject_line = f"Subject: {resolved_subject}\n" if resolved_subject and resolved_subject != "general" else ""
-    prompt = (
-        "Answer this student question as a secondary school tutor.\n"
-        f"{subject_line}"
-        f"{topic_line}"
-        f"Question: {question.strip()}\n"
-        "Requirements:\n"
-        "- Stay on-topic and course-related.\n"
-        "- If it is Maths, explain the method step by step.\n"
-        "- If it is English, explain the rule clearly and use examples.\n"
-        "- Be accurate, supportive, and easy to understand.\n"
-        "- Do not mention being an AI or talk about the prompt.\n"
-        "- Return plain text only."
-    )
+
+    if is_sentence_analysis_question(question):
+        # Student is asking about a specific sentence — answer it directly
+        prompt = (
+            "A student is asking you to analyse a specific sentence or example.\n"
+            "Answer their question DIRECTLY and SPECIFICALLY.\n"
+            "- Look at the exact sentence or example they provided.\n"
+            "- Identify exactly what they are asking for (e.g. the adjective, verb, subject).\n"
+            "- If the sentence does not contain what they are looking for, say so clearly.\n"
+            "- Give a short, clear answer (2-5 sentences). Do NOT give a general topic lesson.\n"
+            "- Do not mention being an AI or talk about the prompt.\n"
+            "- Return plain text only.\n\n"
+            f"Student question: {question.strip()}"
+        )
+    else:
+        topic_line = f"Target topic: {resolved_topic}\n" if resolved_topic else ""
+        subject_line = f"Subject: {resolved_subject}\n" if resolved_subject and resolved_subject != "general" else ""
+        prompt = (
+            "Answer this student question as a secondary school tutor.\n"
+            f"{subject_line}"
+            f"{topic_line}"
+            f"Question: {question.strip()}\n"
+            "Requirements:\n"
+            "- Stay on-topic and course-related.\n"
+            "- If it is Maths, explain the method step by step.\n"
+            "- If it is English, explain the rule clearly and use examples.\n"
+            "- Be accurate, supportive, and easy to understand.\n"
+            "- Do not mention being an AI or talk about the prompt.\n"
+            "- Return plain text only."
+        )
+
     return _call_gemini(
         prompt,
         system_prompt=(
@@ -1387,9 +1519,14 @@ def generate_question(subject=None, exclude_questions=None, topic=None):
                 available = topic_bank
             return random.choice(available)
 
-    question_bank = LOCAL_PRACTICE_QUESTIONS.get(subject or "general", LOCAL_PRACTICE_QUESTIONS["general"])
-    available = [item for item in question_bank if item[0] not in excluded]
+    # Build the widest possible local fallback bank: base bank + all topic banks for this subject
+    base_bank = LOCAL_PRACTICE_QUESTIONS.get(subject or "general", LOCAL_PRACTICE_QUESTIONS["general"])
+    topic_banks = TOPIC_PRACTICE_QUESTIONS.get(subject or "general", {})
+    all_topic_items = [item for bank in topic_banks.values() for item in bank]
+    combined_bank = list({q: (q, a) for q, a in (base_bank + all_topic_items)}.values())
+    available = [item for item in combined_bank if item[0] not in excluded]
 
+    _random_seed = random.randint(1, 9999)
     prompt = "Create one secondary school practice question and provide the answer separately."
     system_prompt = "Generate one simple course-related practice question with a correct answer."
     if subject:
@@ -1401,6 +1538,7 @@ def generate_question(subject=None, exclude_questions=None, topic=None):
 
     prompt = (
         f"{prompt}\n"
+        f"Pick a random topic and difficulty — seed {_random_seed}.\n"
         f"Avoid repeating these questions exactly: {sorted(excluded) if excluded else 'none'}\n"
         "Return plain text only in this format:\n"
         "Question: <question>\n"
@@ -1419,7 +1557,7 @@ def generate_question(subject=None, exclude_questions=None, topic=None):
         pass
 
     if not available:
-        available = question_bank
+        available = combined_bank
 
     if available:
         return random.choice(available)

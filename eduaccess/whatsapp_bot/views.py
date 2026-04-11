@@ -18,6 +18,7 @@ from .models import UserProgress
 from .ai import (
     ask_ai,
     build_local_tutor_answer,
+    is_sentence_analysis_question,
     generate_audio_pack,
     get_audio_pack_by_slug_or_topic,
     get_audio_packs,
@@ -714,6 +715,20 @@ def _build_tutor_reply(request, incoming_msg, practice_state):
     except Exception as ai_exc:
         print(f"[ask_ai] failed for message={incoming_msg!r} subject={inferred_subject} topic={inferred_topic} error={ai_exc}")
         traceback.print_exc()
+        # For sentence-analysis questions, the generic topic explanation is misleading —
+        # the student asked about a specific sentence, not for a topic lesson.
+        if is_sentence_analysis_question(incoming_msg):
+            topic_label = inferred_topic or "that"
+            return (
+                f"I'm having trouble processing your question right now. "
+                f"To answer it properly, look at each word in the sentence and ask: "
+                f"does this word describe a noun? If yes, it is an adjective. "
+                f"If no adjective-like word is present, the sentence may not contain one.\n\n"
+                f"Try again in a moment and I will give you a specific answer."
+                if inferred_topic == "adjectives" else
+                f"I'm having trouble processing your question about {topic_label} right now. "
+                f"Please try again in a moment and I will give you a specific answer for that sentence."
+            )
         if local_answer:
             local_subject = local_answer.get("subject")
             local_topic = local_answer.get("topic")

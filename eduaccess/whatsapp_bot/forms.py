@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 
 
 class EduAccessUserCreationForm(UserCreationForm):
-    email = forms.EmailField(required=False)
+    email = forms.EmailField(required=True, help_text="Required — used to reset your password if you forget it.")
 
     class Meta:
         model = User
