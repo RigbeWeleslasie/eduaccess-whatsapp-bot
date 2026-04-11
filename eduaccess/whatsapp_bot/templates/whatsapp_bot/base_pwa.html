@@ -396,6 +396,10 @@
       {% if request.user.is_authenticated %}
         <a class="navbar-brand" href="{{ url_study }}">EduAccess</a>
         <nav class="navbar-links" aria-label="Main navigation">
+           <a class="nav-link{% if request.path == url_dashboard %} active{% endif %}" href="{{ url_dashboard }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Dashboard
+          </a>
           <a class="nav-link{% if request.path == url_study %} active{% endif %}" href="{{ url_study }}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             Study
@@ -404,10 +408,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
             Library
           </a>
-          <a class="nav-link{% if request.path == url_dashboard %} active{% endif %}" href="{{ url_dashboard }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-            Dashboard
-          </a>
+         
         </nav>
         <div class="navbar-right">
           <span class="navbar-username">{{ request.user.username }}</span>
