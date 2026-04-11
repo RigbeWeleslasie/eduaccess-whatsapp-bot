@@ -5,7 +5,7 @@ services:
     plan: free
     rootDir: eduaccess
     buildCommand: "./build.sh"
-    startCommand: "gunicorn eduaccess.wsgi --log-file -"
+    startCommand: "gunicorn eduaccess.wsgi --log-file - --timeout 120"
     envVars:
       - key: DJANGO_SECRET_KEY
         generateValue: true
@@ -15,6 +15,8 @@ services:
         value: "eduaccess-whatsapp-bot-4hg5.onrender.com,eduaccess.onrender.com"
       - key: DJANGO_CSRF_TRUSTED_ORIGINS
         value: "https://eduaccess-whatsapp-bot-4hg5.onrender.com,https://eduaccess.onrender.com"
+      - key: GEMINI_API_KEY
+        sync: false
       - key: SENDGRID_API_KEY
         sync: false
       - key: DEFAULT_FROM_EMAIL
