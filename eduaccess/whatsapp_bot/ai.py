@@ -5,6 +5,7 @@ import random
 import re
 import base64
 import math
+from datetime import date
 from fractions import Fraction
 from pathlib import Path
 from urllib import error, request
@@ -18,8 +19,8 @@ load_dotenv(BASE_DIR / ".env", override=True)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
-# Set to True when a 429 is received so further calls skip Gemini immediately
-_gemini_quota_exceeded = False
+# Tracks the date on which a 429 was received; resets automatically the next day
+_gemini_quota_exceeded_date = None
 
 
 class GeminiQuotaError(RuntimeError):
@@ -518,10 +519,10 @@ def _extract_text(response_data):
 
 
 def _call_gemini(user_prompt, system_prompt=None):
-    global _gemini_quota_exceeded
+    global _gemini_quota_exceeded_date
     if not GEMINI_API_KEY:
         raise RuntimeError("GEMINI_API_KEY is not set.")
-    if _gemini_quota_exceeded:
+    if _gemini_quota_exceeded_date == date.today():
         raise GeminiQuotaError("Gemini daily quota already exhausted — skipping call.")
 
     contents = []
@@ -552,7 +553,7 @@ def _call_gemini(user_prompt, system_prompt=None):
     except error.HTTPError as exc:
         error_body = exc.read().decode("utf-8", errors="replace")
         if exc.code == 429:
-            _gemini_quota_exceeded = True
+            _gemini_quota_exceeded_date = date.today()
             raise GeminiQuotaError(f"Gemini API error {exc.code}: {error_body}") from exc
         raise RuntimeError(f"Gemini API error {exc.code}: {error_body}") from exc
     except error.URLError as exc:
