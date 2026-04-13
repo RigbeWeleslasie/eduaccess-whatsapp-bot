@@ -1,6 +1,7 @@
 # eduaccess/whatsapp/views.py
 import json
 import re
+import threading
 import traceback
 
 from django.contrib.auth import login
@@ -396,10 +397,21 @@ def _build_topic_resource_lines(request, subject, topic):
     if not topic:
         return ""
 
-    try:
-        learning_pack = get_or_generate_learning_pack(topic, subject=subject)
-        audio_pack = get_or_generate_audio_pack(topic, subject=subject)
-    except Exception:
+    learning_pack = get_learning_pack_by_slug_or_topic(topic, subject=subject)
+    audio_pack = get_audio_pack_by_slug_or_topic(topic, subject=subject)
+
+    if not learning_pack or not audio_pack:
+        # Generate missing packs in the background so future requests are served from cache
+        def _generate_in_background():
+            try:
+                if not learning_pack:
+                    get_or_generate_learning_pack(topic, subject=subject)
+                if not audio_pack:
+                    get_or_generate_audio_pack(topic, subject=subject)
+            except Exception:
+                pass
+
+        threading.Thread(target=_generate_in_background, daemon=True).start()
         return ""
 
     base_url = _get_request_base_url(request)
