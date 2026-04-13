@@ -5,6 +5,7 @@ import random
 import re
 import base64
 import math
+import time
 from datetime import date
 from fractions import Fraction
 from pathlib import Path
@@ -547,17 +548,33 @@ def _call_gemini(user_prompt, system_prompt=None):
         method="POST",
     )
 
-    try:
-        with request.urlopen(req, timeout=30) as response:
-            response_data = json.loads(response.read().decode("utf-8"))
-    except error.HTTPError as exc:
-        error_body = exc.read().decode("utf-8", errors="replace")
-        if exc.code == 429:
-            _gemini_quota_exceeded_date = date.today()
-            raise GeminiQuotaError(f"Gemini API error {exc.code}: {error_body}") from exc
-        raise RuntimeError(f"Gemini API error {exc.code}: {error_body}") from exc
-    except error.URLError as exc:
-        raise RuntimeError(f"Gemini network error: {exc.reason}") from exc
+    _transient_codes = {500, 502, 503, 504}
+    _max_retries = 3
+    _backoff = 2  # seconds, doubles each attempt
+
+    for attempt in range(_max_retries):
+        try:
+            with request.urlopen(req, timeout=30) as response:
+                response_data = json.loads(response.read().decode("utf-8"))
+            break  # success
+        except error.HTTPError as exc:
+            error_body = exc.read().decode("utf-8", errors="replace")
+            if exc.code == 429:
+                _gemini_quota_exceeded_date = date.today()
+                raise GeminiQuotaError(f"Gemini API error {exc.code}: {error_body}") from exc
+            if exc.code in _transient_codes and attempt < _max_retries - 1:
+                time.sleep(_backoff * (2 ** attempt))
+                # Rebuild request body since urlopen consumes it
+                req = request.Request(
+                    url,
+                    data=json.dumps(payload).encode("utf-8"),
+                    headers={"Content-Type": "application/json"},
+                    method="POST",
+                )
+                continue
+            raise RuntimeError(f"Gemini API error {exc.code}: {error_body}") from exc
+        except error.URLError as exc:
+            raise RuntimeError(f"Gemini network error: {exc.reason}") from exc
 
     text = _extract_text(response_data)
     if not text:
@@ -668,6 +685,11 @@ def ask_ai(question, subject=None, topic=None):
         return (
             "I'm sorry, the AI tutor has reached its daily limit and will be available again tomorrow. "
             "In the meantime, try the Offline Library for revision packs and audio lessons on your topic."
+        )
+    except RuntimeError:
+        return (
+            "The AI tutor is temporarily unavailable due to high demand. "
+            "Please try again in a few moments."
         )
 
 
