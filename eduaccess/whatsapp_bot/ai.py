@@ -775,7 +775,11 @@ def ask_ai(question, subject=None, topic=None):
                 "Give direct educational answers that are suitable for students."
             ),
         )
-    except GeminiQuotaError:
+    except GeminiQuotaError as exc:
+        print(f"[ask_ai] quota reached for question={question!r} subject={resolved_subject} topic={resolved_topic} error={exc}")
+        local_answer = build_local_tutor_answer(question)
+        if local_answer:
+            return local_answer["answer"]
         return (
             "I'm sorry, the AI tutor has reached its daily limit and will be available again tomorrow. "
             "In the meantime, try the Offline Library for revision packs and audio lessons on your topic."
@@ -1137,10 +1141,129 @@ def solve_quadratic_equation(question):
     )
 
 
+def solve_derivative_question(question):
+    normalized = re.sub(r"\s+", " ", question.strip().lower())
+    if not normalized:
+        return None
+
+    expression = None
+    derivative_patterns = (
+        r"(?:what is |find )?the derivative of (?P<expr>.+)",
+        r"(?:what is )?d/dx of (?P<expr>.+)",
+        r"differentiate (?P<expr>.+)",
+    )
+
+    for pattern in derivative_patterns:
+        match = re.search(pattern, normalized)
+        if match:
+            expression = match.group("expr")
+            break
+
+    if not expression:
+        return None
+
+    expression = expression.strip().rstrip("?.!,")
+    expression = re.sub(r"\b(please|kindly|now|for me)\b", "", expression)
+    expression = re.sub(r"\s+", "", expression).strip()
+    if not expression:
+        return None
+
+    if expression in {"1/x", "x^-1"}:
+        return (
+            "Derivative solution\n"
+            "Expression: 1/x\n"
+            "Rewrite 1/x as x^-1.\n"
+            "Use the power rule: d/dx(x^n) = n*x^(n-1).\n"
+            "So d/dx(x^-1) = -1*x^-2 = -1/x^2.\n"
+            "Answer: -1/x^2"
+        )
+
+    if re.fullmatch(r"-?\d+(?:\.\d+)?", expression):
+        return (
+            "Derivative solution\n"
+            f"Expression: {expression}\n"
+            "A constant does not change with x, so its derivative is 0.\n"
+            "Answer: 0"
+        )
+
+    if expression == "x":
+        return (
+            "Derivative solution\n"
+            "Expression: x\n"
+            "Use the power rule on x^1.\n"
+            "d/dx(x) = 1.\n"
+            "Answer: 1"
+        )
+
+    if expression.endswith("/x") and re.fullmatch(r"-?\d+(?:\.\d+)?/x", expression):
+        coefficient_text = expression[:-2]
+        coefficient = Fraction(coefficient_text)
+        answer = f"-{_fraction_to_display(abs(coefficient))}/x^2"
+        if coefficient < 0:
+            answer = f"{_fraction_to_display(abs(coefficient))}/x^2"
+        return (
+            "Derivative solution\n"
+            f"Expression: {expression}\n"
+            f"Rewrite {expression} as {_fraction_to_display(coefficient)}x^-1.\n"
+            "Apply the power rule and keep the coefficient.\n"
+            f"Answer: {answer}"
+        )
+
+    match = re.fullmatch(r"([+-]?\d*(?:\.\d+)?)x(?:\^([+-]?\d+))?", expression)
+    if not match:
+        return None
+
+    coefficient_text, exponent_text = match.groups()
+    if coefficient_text in {"", "+", None}:
+        coefficient = Fraction(1)
+    elif coefficient_text == "-":
+        coefficient = Fraction(-1)
+    else:
+        coefficient = Fraction(coefficient_text)
+
+    exponent = int(exponent_text) if exponent_text else 1
+    new_coefficient = coefficient * exponent
+    new_exponent = exponent - 1
+
+    if new_coefficient == 0:
+        derivative = "0"
+    elif new_exponent == 0:
+        derivative = _fraction_to_display(new_coefficient)
+    elif new_exponent == 1:
+        if new_coefficient == 1:
+            derivative = "x"
+        elif new_coefficient == -1:
+            derivative = "-x"
+        else:
+            derivative = f"{_fraction_to_display(new_coefficient)}x"
+    else:
+        if new_coefficient == 1:
+            derivative = f"x^{new_exponent}"
+        elif new_coefficient == -1:
+            derivative = f"-x^{new_exponent}"
+        else:
+            derivative = f"{_fraction_to_display(new_coefficient)}x^{new_exponent}"
+
+    return (
+        "Derivative solution\n"
+        f"Expression: {expression}\n"
+        "Use the power rule: d/dx(ax^n) = a*n*x^(n-1).\n"
+        f"Answer: {derivative}"
+    )
+
+
 def build_local_tutor_answer(question):
     normalized = re.sub(r"\s+", " ", question.strip().lower())
     if not normalized:
         return None
+
+    solved_derivative = solve_derivative_question(question)
+    if solved_derivative:
+        return {
+            "subject": "maths",
+            "topic": "calculus",
+            "answer": solved_derivative,
+        }
 
     solved_equation = solve_linear_equation(question)
     if solved_equation:

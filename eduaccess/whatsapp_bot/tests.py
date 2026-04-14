@@ -582,6 +582,33 @@ class PwaTests(TestCase):
         self.assertIn("/audio-packs/audio-calculus/player/", body)
         self.assertNotIn("couldn't process your request right now", body)
 
+    @patch("whatsapp_bot.ai.print")
+    @patch("whatsapp_bot.ai._call_gemini")
+    def test_simple_derivative_uses_local_fallback_when_gemini_quota_is_hit(
+        self,
+        mock_call_gemini,
+        mock_print,
+    ):
+        from whatsapp_bot.ai import GeminiQuotaError
+
+        User.objects.create_user(username="student_derivative", password="StrongPass123")
+        self.client.login(username="student_derivative", password="StrongPass123")
+        mock_call_gemini.side_effect = GeminiQuotaError("quota exhausted")
+
+        response = self.client.post(
+            "/study-assistant/",
+            {"question": "what is the derivative of 1/x please"},
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("Derivative solution", body)
+        self.assertIn("Answer: -1/x^2", body)
+        self.assertIn("/packs/calculus/", body)
+        self.assertNotIn("daily limit", body)
+        mock_print.assert_called()
+
     @patch("whatsapp_bot.views.get_or_generate_audio_pack")
     @patch("whatsapp_bot.views.get_or_generate_learning_pack")
     def test_offline_library_shows_recent_topic_from_normal_chat(
