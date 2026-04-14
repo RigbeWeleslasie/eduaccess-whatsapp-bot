@@ -867,12 +867,14 @@ def service_worker(request):
         static("whatsapp_bot/icons/icon-512.png"),
     ]
 
-    for current_subject in ["maths", "english"]:
-        for topic in get_supported_topics(subject=current_subject):
-            slug = _topic_to_slug(topic)
-            offline_urls.append(f"/packs/{slug}/")
-            offline_urls.append(f"/audio-packs/audio-{slug}/player/")
-            offline_urls.append(f"/audio-packs/audio-{slug}/transcript/")
+    # Only precache resources that already exist locally. Avoid triggering
+    # synchronous AI generation during service-worker install on production.
+    for pack in get_learning_packs():
+        offline_urls.append(f"/packs/{pack['slug']}/")
+
+    for pack in get_audio_packs():
+        offline_urls.append(f"/audio-packs/{pack['slug']}/player/")
+        offline_urls.append(f"/audio-packs/{pack['slug']}/transcript/")
 
     offline_urls = list(dict.fromkeys(offline_urls))
 
@@ -880,7 +882,7 @@ def service_worker(request):
         request,
         "whatsapp_bot/service-worker.js",
         {
-            "cache_name": "eduaccess-pwa-v2",
+            "cache_name": "eduaccess-pwa-v3",
             "offline_urls": offline_urls,
         },
         content_type="application/javascript; charset=utf-8",

@@ -26,6 +26,15 @@ class PwaTests(TestCase):
         self.assertIn("CACHE_NAME", response.content.decode())
         self.assertEqual(response["Service-Worker-Allowed"], "/")
 
+    def test_service_worker_precaches_only_local_pack_resources(self):
+        response = self.client.get("/service-worker.js")
+
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("/packs/maths-algebra-basics/", body)
+        self.assertIn("/audio-packs/audio-maths-algebra-basics/player/", body)
+        self.assertNotIn("/audio-packs/audio-simultaneous-equations/player/", body)
+
     def test_offline_library_page_renders_pack_links(self):
         response = self.client.get("/offline-library/")
 
