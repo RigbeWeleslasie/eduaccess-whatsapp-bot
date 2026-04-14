@@ -799,10 +799,13 @@ def _recent_topic_library_entries(request, practice_state, subject=None):
         if subject and topic_subject != subject:
             continue
 
-        try:
-            learning_pack = get_or_generate_learning_pack(topic, subject=topic_subject if topic_subject != "general" else None)
-            audio_pack = get_or_generate_audio_pack(topic, subject=topic_subject if topic_subject != "general" else None)
-        except Exception:
+        resolved_subject = topic_subject if topic_subject != "general" else None
+        learning_pack = get_learning_pack_by_slug_or_topic(topic, subject=resolved_subject)
+        audio_pack = get_audio_pack_by_slug_or_topic(topic, subject=resolved_subject)
+
+        if not learning_pack or not audio_pack:
+            # Keep the offline library fast. If a recent topic has no cached/local
+            # packs yet, trigger background generation elsewhere and skip it here.
             continue
 
         if learning_pack["slug"] in seen_slugs:

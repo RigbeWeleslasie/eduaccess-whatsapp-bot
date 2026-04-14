@@ -664,6 +664,37 @@ class PwaTests(TestCase):
         self.assertIn("/packs/adjectives/", body)
         self.assertIn("/audio-packs/audio-adjectives/player/", body)
 
+    @patch("whatsapp_bot.views.get_audio_pack_by_slug_or_topic")
+    @patch("whatsapp_bot.views.get_learning_pack_by_slug_or_topic")
+    @patch("whatsapp_bot.views.get_or_generate_audio_pack")
+    @patch("whatsapp_bot.views.get_or_generate_learning_pack")
+    def test_offline_library_does_not_generate_recent_topic_resources_synchronously(
+        self,
+        mock_get_or_generate_learning_pack,
+        mock_get_or_generate_audio_pack,
+        mock_get_learning_pack_by_slug_or_topic,
+        mock_get_audio_pack_by_slug_or_topic,
+    ):
+        user = User.objects.create_user(username="student_timeout", password="StrongPass123")
+        self.client.login(username="student_timeout", password="StrongPass123")
+        UserProgress.objects.get_or_create(user=user)
+
+        progress = user.learning_progress
+        progress.last_question = (
+            '{"pending": null, "subject_stats": {}, "recent_questions": {}, '
+            '"recent_topics": [{"topic": "novel topic", "subject": "maths", "normalized": "novel topic"}]}'
+        )
+        progress.save()
+
+        mock_get_learning_pack_by_slug_or_topic.return_value = None
+        mock_get_audio_pack_by_slug_or_topic.return_value = None
+
+        response = self.client.get("/offline-library/")
+
+        self.assertEqual(response.status_code, 200)
+        mock_get_or_generate_learning_pack.assert_not_called()
+        mock_get_or_generate_audio_pack.assert_not_called()
+
     @patch("whatsapp_bot.views.generate_audio_pack")
     def test_study_assistant_api_returns_audio_pack_reply(self, mock_generate_audio_pack):
         User.objects.create_user(username="student1", password="StrongPass123")
