@@ -70,9 +70,20 @@ LOCAL_LEARNING_PACKS = [
         "content": (
             "ALGEBRA BASICS STUDY PACK\n\n"
             "This offline fallback pack introduces variables, expressions, equations, and the balance method.\n\n"
-            "Worked example: x + 7 = 15, so x = 8.\n"
-            "Worked example: 3x = 21, so x = 7.\n\n"
-            "Revision tip: keep both sides balanced and always check your answer."
+            "KEY IDEAS\n"
+            "- Algebra uses letters to represent unknown values.\n"
+            "- Like terms can be combined.\n"
+            "- Keep both sides balanced when solving equations.\n\n"
+            "WORKED EXAMPLE 1\n"
+            "x + 7 = 15, so subtract 7 from both sides to get x = 8.\n\n"
+            "WORKED EXAMPLE 2\n"
+            "3x = 21, so divide both sides by 3 to get x = 7.\n\n"
+            "COMMON MISTAKES\n"
+            "- Adding unlike terms together.\n"
+            "- Forgetting to do the same operation on both sides.\n"
+            "- Skipping the final check.\n\n"
+            "REVISION TIP\n"
+            "Keep both sides balanced and always check your answer."
         ),
     },
     {
@@ -84,9 +95,60 @@ LOCAL_LEARNING_PACKS = [
         "content": (
             "PASSIVE VOICE STUDY PACK\n\n"
             "This offline fallback pack explains that passive voice focuses on the receiver of the action.\n\n"
-            "Pattern: object + form of be + past participle.\n"
-            "Example: The chef cooked the meal. -> The meal was cooked by the chef.\n\n"
-            "Revision tip: identify the object first, then choose the correct form of be."
+            "KEY IDEAS\n"
+            "- Passive voice focuses on the action receiver.\n"
+            "- Use: object + form of be + past participle.\n\n"
+            "WORKED EXAMPLE\n"
+            "Active: The chef cooked the meal.\n"
+            "Passive: The meal was cooked by the chef.\n\n"
+            "COMMON MISTAKES\n"
+            "- Forgetting the correct form of 'be'.\n"
+            "- Using the wrong past participle.\n"
+            "- Changing the meaning of the sentence.\n\n"
+            "REVISION TIP\n"
+            "Identify the object first, then choose the correct form of be."
+        ),
+    },
+    {
+        "slug": "linear-equations",
+        "subject": "maths",
+        "topic": "Linear Equations",
+        "title": "Linear Equations Pack",
+        "summary": "Offline fallback pack for linear equations.",
+        "content": (
+            "LINEAR EQUATIONS STUDY PACK\n\n"
+            "A linear equation has one unknown with a highest power of 1.\n\n"
+            "Worked example: 2x + 3 = 11 -> 2x = 8 -> x = 4.\n"
+            "Worked example: 5x - 4 = 3x + 2 -> 2x = 6 -> x = 3.\n\n"
+            "Revision tip: move unknowns to one side and constants to the other, then divide."
+        ),
+    },
+    {
+        "slug": "quadratic-equations",
+        "subject": "maths",
+        "topic": "Quadratic Equations",
+        "title": "Quadratic Equations Pack",
+        "summary": "Offline fallback pack for quadratic equations.",
+        "content": (
+            "QUADRATIC EQUATIONS STUDY PACK\n\n"
+            "A quadratic equation has the form ax² + bx + c = 0.\n\n"
+            "Method 1 (factorising): x² + 5x + 6 = 0 -> (x + 2)(x + 3) = 0 -> x = -2 or x = -3.\n"
+            "Method 2 (formula): x = (-b ± √(b²-4ac)) / 2a.\n\n"
+            "Revision tip: check whether the equation can be factorised before using the formula."
+        ),
+    },
+    {
+        "slug": "calculus",
+        "subject": "maths",
+        "topic": "Calculus",
+        "title": "Calculus Pack",
+        "summary": "Offline fallback pack for calculus.",
+        "content": (
+            "CALCULUS STUDY PACK\n\n"
+            "Calculus covers differentiation (rates of change) and integration (areas under curves).\n\n"
+            "Differentiation rule: d/dx(xⁿ) = nxⁿ⁻¹.\n"
+            "Example: d/dx(x³) = 3x².\n\n"
+            "Revision tip: practise the power rule first, then apply it to polynomial expressions."
         ),
     },
 ]
@@ -112,6 +174,39 @@ LOCAL_AUDIO_PACKS = [
         "transcript": (
             "Welcome to this passive voice lesson. Passive voice focuses on the receiver of the action. "
             "A common pattern is object plus a form of be plus the past participle."
+        ),
+    },
+    {
+        "slug": "audio-linear-equations",
+        "subject": "maths",
+        "topic": "Linear Equations",
+        "title": "Linear Equations Audio Lesson",
+        "summary": "Short offline linear equations audio transcript fallback.",
+        "transcript": (
+            "Welcome to this linear equations lesson. A linear equation has one unknown. "
+            "Move unknowns to one side and constants to the other, then divide to find the answer."
+        ),
+    },
+    {
+        "slug": "audio-quadratic-equations",
+        "subject": "maths",
+        "topic": "Quadratic Equations",
+        "title": "Quadratic Equations Audio Lesson",
+        "summary": "Short offline quadratic equations audio transcript fallback.",
+        "transcript": (
+            "Welcome to this quadratic equations lesson. A quadratic has the form ax squared plus bx plus c. "
+            "Try to factorise first, or use the quadratic formula when needed."
+        ),
+    },
+    {
+        "slug": "audio-calculus",
+        "subject": "maths",
+        "topic": "Calculus",
+        "title": "Calculus Audio Lesson",
+        "summary": "Short offline calculus audio transcript fallback.",
+        "transcript": (
+            "Welcome to this calculus lesson. Calculus covers rates of change and areas under curves. "
+            "The basic differentiation rule is: bring down the power and reduce the index by one."
         ),
     },
 ]
@@ -550,13 +645,13 @@ def _call_gemini(user_prompt, system_prompt=None):
 
     _transient_codes = {500, 502, 503, 504}
     _max_retries = 3
-    _backoff = 2  # seconds, doubles each attempt
+    _backoff = 2  
 
     for attempt in range(_max_retries):
         try:
             with request.urlopen(req, timeout=30) as response:
                 response_data = json.loads(response.read().decode("utf-8"))
-            break  # success
+            break 
         except error.HTTPError as exc:
             error_body = exc.read().decode("utf-8", errors="replace")
             if exc.code == 429:
@@ -564,7 +659,7 @@ def _call_gemini(user_prompt, system_prompt=None):
                 raise GeminiQuotaError(f"Gemini API error {exc.code}: {error_body}") from exc
             if exc.code in _transient_codes and attempt < _max_retries - 1:
                 time.sleep(_backoff * (2 ** attempt))
-                # Rebuild request body since urlopen consumes it
+               
                 req = request.Request(
                     url,
                     data=json.dumps(payload).encode("utf-8"),
@@ -633,7 +728,7 @@ def is_sentence_analysis_question(question):
     normalized = question.strip().lower()
     if any(m in normalized for m in _SENTENCE_ANALYSIS_MARKERS):
         return True
-    # Pattern: "some sentence, what/which/find..." — comma before a question word
+
     if re.search(r".{10,},\s*(what|which|find|identify|is there|are there|how many)", normalized):
         return True
     return False
@@ -644,7 +739,6 @@ def ask_ai(question, subject=None, topic=None):
     resolved_topic = topic or resolve_topic_from_text(question, subject=subject)[1]
 
     if is_sentence_analysis_question(question):
-        # Student is asking about a specific sentence — answer it directly
         prompt = (
             "A student is asking you to analyse a specific sentence or example.\n"
             "Answer their question DIRECTLY and SPECIFICALLY.\n"
@@ -1503,6 +1597,8 @@ def get_or_generate_learning_pack(query, subject=None):
         return generated_pack
 
     existing_pack = get_learning_pack_by_slug_or_topic(query, subject=subject)
+    if existing_pack and existing_pack["slug"] == lowered_query:
+        return existing_pack
     source_topic = existing_pack["topic"] if existing_pack else query
     source_slug = existing_pack["slug"] if existing_pack else None
 
@@ -1521,6 +1617,8 @@ def get_or_generate_audio_pack(query, subject=None):
         return generated_pack
 
     existing_pack = get_audio_pack_by_slug_or_topic(query, subject=subject)
+    if existing_pack and existing_pack["slug"] == lowered_query:
+        return existing_pack
     source_topic = existing_pack["topic"] if existing_pack else query
     source_slug = existing_pack["slug"] if existing_pack else None
 
@@ -1563,7 +1661,6 @@ def generate_question(subject=None, exclude_questions=None, topic=None):
                 available = topic_bank
             return random.choice(available)
 
-    # Build the widest possible local fallback bank: base bank + all topic banks for this subject
     base_bank = LOCAL_PRACTICE_QUESTIONS.get(subject or "general", LOCAL_PRACTICE_QUESTIONS["general"])
     topic_banks = TOPIC_PRACTICE_QUESTIONS.get(subject or "general", {})
     all_topic_items = [item for bank in topic_banks.values() for item in bank]

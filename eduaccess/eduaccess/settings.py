@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
+import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -190,6 +191,7 @@ PASSWORD_RESET_TIMEOUT = 3600  # link expires after 1 hour
 
 LOCAL_DEV_HOSTS = {"127.0.0.1", "localhost"}
 IS_LOCAL_ONLY = set(ALLOWED_HOSTS).issubset(LOCAL_DEV_HOSTS)
+IS_RUNNING_TESTS = "test" in sys.argv
 
 if not DEBUG:
     SESSION_COOKIE_SECURE = True
@@ -197,6 +199,7 @@ if not DEBUG:
     SECURE_SSL_REDIRECT = (
         os.getenv("DJANGO_SECURE_SSL_REDIRECT", "True").lower() == "true"
         and not IS_LOCAL_ONLY
+        and not IS_RUNNING_TESTS
     )
 else:
     SESSION_COOKIE_SECURE = False

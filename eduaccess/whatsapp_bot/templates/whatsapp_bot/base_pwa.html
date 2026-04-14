@@ -35,7 +35,7 @@
       margin: 0 auto;
       padding: 24px 16px 48px;
     }
-    /* ── Unified navbar ── */
+
     .navbar {
       position: sticky;
       top: 0;
@@ -64,7 +64,7 @@
       margin-right: 8px;
       flex-shrink: 0;
     }
-    /* nav links — desktop */
+  
     .navbar-links {
       display: flex;
       align-items: center;
@@ -87,7 +87,7 @@
     .nav-link svg { width: 16px; height: 16px; flex-shrink: 0; }
     .nav-link:hover { color: var(--brand); background: var(--brand-soft); }
     .nav-link.active { color: var(--brand); background: var(--brand-soft); }
-    /* right side */
+  
     .navbar-right {
       display: flex;
       align-items: center;
@@ -96,10 +96,10 @@
     }
     .navbar-username {
       color: var(--muted);
-      font-size: 13px;
+      font-size: 15px;
       font-weight: 700;
     }
-    /* hamburger — mobile only */
+
     .hamburger {
       display: none;
       background: none;
@@ -112,7 +112,7 @@
       margin-left: auto;
     }
     .hamburger:hover { background: var(--brand-soft); }
-    /* mobile dropdown */
+   
     .mobile-menu {
       display: none;
       flex-direction: column;
@@ -153,7 +153,7 @@
       .navbar-logout { display: none; }
       .hamburger { display: inline-flex; align-items: center; justify-content: center; }
     }
-    /* keep old .topbar-note used elsewhere */
+  
     .topbar-note { color: var(--muted); font-size: 14px; }
     .hero,
     .card {
@@ -461,7 +461,7 @@
     {% block content %}{% endblock %}
   </main>
   <script>
-    // Hamburger menu toggle
+
     const hamburger = document.getElementById("hamburger");
     const mobileMenu = document.getElementById("mobile-menu");
     if (hamburger && mobileMenu) {
@@ -472,7 +472,7 @@
           ? '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'
           : '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>';
       });
-      // Close menu when a nav link is tapped
+
       mobileMenu.querySelectorAll("a").forEach(function (link) {
         link.addEventListener("click", function () {
           mobileMenu.classList.remove("open");

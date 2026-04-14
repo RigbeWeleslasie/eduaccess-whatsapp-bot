@@ -162,6 +162,33 @@ The test suite covers:
 - learning pack downloads
 - WhatsApp webhook behavior
 
+## Phase 4: Testing & Iteration
+
+Phase 4 focused on refining quality, validating outputs, and improving delivery reliability.
+
+What is already applied in the codebase:
+
+- user-flow simulation through the Django test suite
+- explicit failure-scenario tests in [`whatsapp_bot/tests.py`](whatsapp_bot/tests.py)
+- fallback validation when AI is unavailable
+- stable offline pack and transcript behavior for known local resources
+
+Phase 4 deliverables:
+
+- [Improvement Log](IMPROVEMENT_LOG.md)
+- [Testing Summary](TESTING_SUMMARY.md)
+
+## Refined MVP
+
+After testing and iteration, the refined MVP is:
+
+1. A learner asks an English or Maths question on web or WhatsApp.
+2. EduAccess returns a short, usable answer.
+3. EduAccess links the learner to offline-friendly study resources.
+4. If AI is unavailable, EduAccess still provides fallback learning support.
+
+This keeps the product focused, demo-ready, and resilient under weak-connectivity conditions.
+
 ## Demo Guidance For Phase 3
 
 The strongest mentor demo is:

@@ -684,10 +684,11 @@ def _build_tutor_reply(request, incoming_msg, practice_state):
     if normalized.startswith("pack "):
         query = normalized[5:].strip()
         pack = None
+        existing_pack = get_learning_pack_by_slug_or_topic(query)
         try:
-            pack = get_or_generate_learning_pack(query)
+            pack = generate_learning_pack(query)
         except Exception:
-            pack = get_learning_pack_by_slug_or_topic(query)
+            pack = existing_pack or get_learning_pack_by_slug_or_topic(query)
         if pack:
             _remember_topic(practice_state, pack["topic"], pack.get("subject"))
             return (
@@ -700,10 +701,12 @@ def _build_tutor_reply(request, incoming_msg, practice_state):
     if normalized.startswith("audio pack "):
         query = normalized[11:].strip()
         pack = None
+        existing_pack = get_audio_pack_by_slug_or_topic(query)
+        pack_topic = existing_pack["topic"] if existing_pack else query
         try:
-            pack = get_or_generate_audio_pack(query)
+            pack = generate_audio_pack(_topic_to_title(pack_topic))
         except Exception:
-            pack = get_audio_pack_by_slug_or_topic(query)
+            pack = existing_pack or get_audio_pack_by_slug_or_topic(query)
         if pack:
             _remember_topic(practice_state, pack["topic"], pack.get("subject"))
             return (
